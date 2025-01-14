@@ -22,6 +22,12 @@ api.post(
     administradorController.GuardarAdministrador
 );
 
+api.get(
+  '/getAllAdministradores',
+
+  administradorController.AllAdministradores
+);
+
 
 
 // // Los empleados también pueden registrar clientes

@@ -69,6 +69,9 @@ async function RegistrarEmpleado(req, res) {
         const fileExtension = path.extname(file.originalname)
         const fileName = `picture_${Date.now()}${fileExtension}`
         const filePath = path.join(userFolderPath, fileName)
+
+        // Cambiar las barras invertidas (\) por barras normales (/)
+        filePath = filePath.replace(/\\/g, '/');
     
         console.log(filePath)
         
@@ -119,7 +122,27 @@ function bufferToBase64(buffer) {
     return buffer.toString('base64');
 }
 
+async function AllEmpleados(req, res) {
+    try{
+        const empleados = await Empleado.find()
+        return !empleados ? 
+        res.status(404).json({ 
+            status: '404 NOT FOUND',
+            message : 'API : No existen Empleados'
+         })
+        : res.status(200).json({
+            status: '200 OK',
+            data: empleados
+        })
+    }catch(error){
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `API : Error al realizar la operación. : ${error}`
+        })
+    }
+}
 
 module.exports = {
     RegistrarEmpleado,
+    AllEmpleados,
 }

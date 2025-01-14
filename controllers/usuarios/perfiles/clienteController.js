@@ -69,6 +69,8 @@ async function RegistrarCliente(req, res) {
         const fileExtension = path.extname(file.originalname)
         const fileName = `picture_${Date.now()}${fileExtension}`
         const filePath = path.join(userFolderPath, fileName)
+        // Cambiar las barras invertidas (\) por barras normales (/)
+        filePath = filePath.replace(/\\/g, '/');
     
         console.log(filePath)
         
@@ -119,7 +121,29 @@ function bufferToBase64(buffer) {
     return buffer.toString('base64');
 }
 
+async function AllClientes(req, res) {
+    console.log("getCliente");
+    try{
+        const clientes = await Cliente.find()
+        return !clientes ? 
+        res.status(404).json({ 
+            status: '404 NOT FOUND',
+            message : 'API : No existen Clientes'
+         })
+        : res.status(200).json({
+            status: '200 OK',
+            data: clientes
+        })
+    }catch(error){
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `API : Error al realizar la operación. : ${error}`
+        })
+    }
+}
+
 
 module.exports = {
     RegistrarCliente,
+    AllClientes,
 }

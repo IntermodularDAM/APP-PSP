@@ -21,5 +21,11 @@ api.post(
     clienteController.RegistrarCliente
 );
 
+api.get(
+  '/getAllClientes',
+
+  clienteController.AllClientes
+);
+
 
 module.exports = api;

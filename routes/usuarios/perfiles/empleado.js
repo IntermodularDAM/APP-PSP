@@ -22,6 +22,11 @@ api.post(
     empleadoController.RegistrarEmpleado
 );
 
+api.get(
+  '/getAllEmpleados',
+
+  empleadoController.AllEmpleados
+);
 
 // // Los empleados también pueden registrar clientes
 // api.post(
