@@ -17,7 +17,7 @@ const ClienteSchema = new mongoose.Schema({
     rutaFoto : { type: String, required: true },
 
     telefono : String,
-    vip : Boolean,
+    vip : Boolean, 
     
     
 }, { _id: false }); //ID False para evitar advertencias de modificación de ID

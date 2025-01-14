@@ -6,7 +6,7 @@ const config = require('../config')
 
 function createToken (user, role) {
   const payload = {
-    sub: user._id,
+    sub: user,
     role: role,
     iat: moment().unix(),
     exp: moment().add(5,'minutes').unix(),

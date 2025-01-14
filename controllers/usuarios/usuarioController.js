@@ -179,13 +179,16 @@ async function logIn(req, res){
             return res.status(403).send({ message: 'Rol no permitido' });
         }
 
+        const Token = service.createToken(usuario._id, perfil.rol);
         res.status(200).json({
             status: "200 OK",
             message:'LOGEADO',
-            data : { token: service.createToken(usuario, perfil.rol),
+            data : { token: Token,
             user:perfil}
            
         }) 
+
+        console.log()
         // // Generar token con rol incluido
         // const token = jwt.sign(
         //     { id: usuario._id, rol: perfil.rol },
