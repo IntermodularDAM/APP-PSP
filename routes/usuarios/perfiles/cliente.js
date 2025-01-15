@@ -21,6 +21,8 @@ api.post(
     clienteController.RegistrarCliente
 );
 
+
+
 api.get(
   '/getAllClientes',
 

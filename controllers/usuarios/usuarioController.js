@@ -203,9 +203,35 @@ async function logIn(req, res){
     }
 }
 
+async function eliminarUsuario(req,res){
+
+    const  email  = req.body.email;
+    console.log(email)
+    try{
+        const user = await Usuario.deleteOne({email});
+        if (user.deletedCount === 0) {
+            return res.status(404).json({
+                status: "404 NOT FOUND",
+                message: 'API : El usuario no existe.'
+            });
+        }
+        res.status(200).json(
+            {
+                status: "200 OK",
+                message : 'API :El usuario ha sido eliminado.'
+            })
+    }catch(err){
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `API : ERROR AL REALIZAR LA OPERACION : ${err}`
+        })
+    }    
+}
+
 
 module.exports = {
     registroUsuario,
     verificarUsuario,
     logIn,
+    eliminarUsuario
 }

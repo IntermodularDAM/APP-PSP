@@ -3,9 +3,23 @@ const api = express.Router();
 const usuarioController = require('../../controllers/usuarios/usuarioController')
 
 
-api.post('/registroUsuario',usuarioController.registroUsuario);
-api.post('/verificarUsuario',usuarioController.verificarUsuario);
-api.post('/logIn',usuarioController.logIn);
+api.post(
+    '/registroUsuario',
+    usuarioController.registroUsuario
+);
+api.post(
+    '/verificarUsuario'
+    ,usuarioController.verificarUsuario
+);
+api.post(
+    '/logIn',
+    usuarioController.logIn
+);
+
+api.delete(
+    '/eliminarUsuario',
+    usuarioController.eliminarUsuario
+);
 
 
 module.exports = api;

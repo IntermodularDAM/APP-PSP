@@ -24,7 +24,6 @@ api.post(
 
 api.get(
   '/getAllAdministradores',
-
   administradorController.AllAdministradores
 );
 

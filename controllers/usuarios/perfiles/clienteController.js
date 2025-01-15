@@ -68,7 +68,7 @@ async function RegistrarCliente(req, res) {
         // Generar un nombre único para la imagen
         const fileExtension = path.extname(file.originalname)
         const fileName = `picture_${Date.now()}${fileExtension}`
-        const filePath = path.join(userFolderPath, fileName)
+        let filePath = path.join(userFolderPath, fileName)
         // Cambiar las barras invertidas (\) por barras normales (/)
         filePath = filePath.replace(/\\/g, '/');
     
