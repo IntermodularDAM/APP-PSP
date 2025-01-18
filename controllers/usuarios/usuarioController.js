@@ -228,10 +228,64 @@ async function eliminarUsuario(req,res){
     }    
 }
 
+async function  todosLosUsuarios(req,res){
+    
+    try{
+        const user = await Usuario.find()
+        return !user ? 
+        res.status(404).json({ 
+            status: '404 NOT FOUND',
+            message : 'LOS USUARIOS NO EXISTE'
+         })
+        : res.status(200).json({
+            status: '200 OK',
+            data: user
+        })
+    }catch(error){
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `ERROR AL REALIZAR LA OPERACION : ${error}`
+        })
+    }
+}
+
+async function emailDisponible(req, res){
+
+    try {
+
+
+        const  email  = req.body.email;
+
+        console.log(email)
+        // Buscar usuario en la colección de usuarios
+        const usuario = await Usuario.findOne({ email });
+
+        if (usuario) {
+            console.log("No se puede")
+            return res.status(404).send({ message: 'Email no disponible' });
+        }
+
+        console.log("Se puede")
+        res.status(200).json({
+            status: "200 OK",
+            message:'Email Dispònible'
+
+           
+        }) 
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Error interno del servidor' });
+    }
+}
 
 module.exports = {
     registroUsuario,
     verificarUsuario,
     logIn,
-    eliminarUsuario
+    eliminarUsuario,
+    todosLosUsuarios,
+    emailDisponible
 }
+
+
+

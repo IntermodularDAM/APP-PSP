@@ -122,7 +122,6 @@ function bufferToBase64(buffer) {
 }
 
 async function AllClientes(req, res) {
-    console.log("getCliente");
     try{
         const clientes = await Cliente.find()
         return !clientes ? 

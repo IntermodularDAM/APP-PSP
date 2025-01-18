@@ -20,6 +20,16 @@ api.delete(
     '/eliminarUsuario',
     usuarioController.eliminarUsuario
 );
+api.get(
+    '/todosLosUsuarios',
+    usuarioController.todosLosUsuarios
+);
+api.post(
+    '/emailDisponible'
+    ,usuarioController.emailDisponible
+);
+
+
 
 
 module.exports = api;
