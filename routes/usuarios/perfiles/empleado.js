@@ -24,8 +24,17 @@ api.post(
 
 api.get(
   '/getAllEmpleados',
-
+  auth,
+  authz(['Administrador','Empleado']), 
   empleadoController.AllEmpleados
+);
+
+api.put(
+  '/editarEmpleado/:id',
+  auth,
+  authz(['Administrador','Empleado']), 
+  upload.single('picture'),
+  empleadoController.EditarEmpleado
 );
 
 // // Los empleados también pueden registrar clientes

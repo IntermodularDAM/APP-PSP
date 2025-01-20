@@ -24,9 +24,17 @@ api.post(
 
 api.get(
   '/getAllAdministradores',
+  auth,
+  authz(['Administrador','Empleado']), 
   administradorController.AllAdministradores
 );
 
+api.get(
+  '/editarAdministrador/:id',
+  auth,
+  authz(['Administrador','Empleado']), 
+  administradorController.EditarAdministrador
+);
 
 
 // // Los empleados también pueden registrar clientes

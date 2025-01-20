@@ -142,7 +142,45 @@ async function AllEmpleados(req, res) {
     }
 }
 
+async function EditarEmpleado(req,res){
+   
+    const  perfilId  = req.params.id;
+    const cuerpo = req.body;
+    console.log("EditarEmpleado")
+    // Validar el cuerpo
+    const camposPermitidos = ['nombre', 'apellido', 'dni', 'date','ciudad','sexo'];
+    const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
+    
+    if (camposInvalidos.length > 0) {
+        return res.status(400).json({
+        status: '400 BAD REQUEST',
+        message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
+        });
+    }
+    
+    try {
+        const empleadoEdit = await Empleado.findByIdAndUpdate(perfilId, cuerpo, { new: true }).lean()
+        return !empleadoEdit ?  res.status(404).json({
+                status: '404 NOT FOUND',
+                message: 'EL USUARIO NO EXISTE'
+            })
+        :
+        res.status(200).json({ 
+            status: "200 OK",
+            user: empleadoEdit 
+        });
+    }
+      
+    catch (error) {
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `ERROR AL REALIZAR LA OPERACION : ${error}`
+        })
+    }
+}
+
 module.exports = {
     RegistrarEmpleado,
     AllEmpleados,
+    EditarEmpleado,
 }

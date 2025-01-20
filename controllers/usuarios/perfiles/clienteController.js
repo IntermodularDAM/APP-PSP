@@ -141,8 +141,46 @@ async function AllClientes(req, res) {
     }
 }
 
+async function EditarCliente(req,res){
+    
+    const  userId  = req.params.userID;
+    const cuerpo = req.body;
+
+    // Validar el cuerpo
+    const camposPermitidos = ['nombre', 'apellido', 'correo', 'password','amigos','seguidores','picture'];
+    const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
+    
+    if (camposInvalidos.length > 0) {
+        return res.status(400).json({
+        status: '400 BAD REQUEST',
+        message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
+        });
+    }
+    
+    try {
+        const userUpdated = await User.findByIdAndUpdate(userId, cuerpo, { new: true }).lean()
+        return !userUpdated ?  res.status(404).json({
+                status: '404 NOT FOUND',
+                message: 'EL USUARIO NO EXISTE'
+            })
+        :
+        res.status(200).json({ 
+            status: "200 OK",
+            user: userUpdated 
+        });
+    }
+      
+    catch (error) {
+        return res.status(500).json({
+            status: '500 ERROR INTERNO DE SERVIDOR',
+            message: `ERROR AL REALIZAR LA OPERACION : ${error}`
+        })
+    }
+}
 
 module.exports = {
     RegistrarCliente,
     AllClientes,
+    EditarCliente,
+    
 }

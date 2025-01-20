@@ -1,7 +1,8 @@
 const express = require('express');
 const api = express.Router();
 const usuarioController = require('../../controllers/usuarios/usuarioController')
-
+const auth = require("../../middlewares/auth");
+const authz = require("../../middlewares/authz");
 
 api.post(
     '/registroUsuario',
@@ -22,6 +23,8 @@ api.delete(
 );
 api.get(
     '/todosLosUsuarios',
+    auth,
+    authz(["Administrador","Empleado"]),
     usuarioController.todosLosUsuarios
 );
 api.post(

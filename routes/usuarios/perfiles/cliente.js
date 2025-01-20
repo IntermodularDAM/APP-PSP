@@ -25,9 +25,16 @@ api.post(
 
 api.get(
   '/getAllClientes',
-
+  auth,
+  authz(['Administrador','Empleado']), 
   clienteController.AllClientes
 );
 
+api.get(
+  '/editarCliente/:id',
+  auth,
+  authz(['Administrador','Empleado']), 
+  clienteController.EditarCliente
+);
 
 module.exports = api;
