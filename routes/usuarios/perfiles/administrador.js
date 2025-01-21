@@ -29,13 +29,21 @@ api.get(
   administradorController.AllAdministradores
 );
 
-api.get(
+api.put(
   '/editarAdministrador/:id',
   auth,
-  authz(['Administrador','Empleado']), 
+  authz(['Administrador']), 
+  upload.single('picture'),
   administradorController.EditarAdministrador
 );
 
+api.post(
+  '/buscarAdministrador',
+  auth,
+  authz(['Administrador','Empleado']), 
+  upload.single('picture'),
+  administradorController.BuscarAdministrador
+);
 
 // // Los empleados también pueden registrar clientes
 // api.post(

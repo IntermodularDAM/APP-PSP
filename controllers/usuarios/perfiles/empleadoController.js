@@ -144,9 +144,10 @@ async function AllEmpleados(req, res) {
 
 async function EditarEmpleado(req,res){
    
-    const  perfilId  = req.params.id;
+    const  perfilID  = req.params.id;
     const cuerpo = req.body;
-    console.log("EditarEmpleado")
+    const file = req.file;
+
     // Validar el cuerpo
     const camposPermitidos = ['nombre', 'apellido', 'dni', 'date','ciudad','sexo'];
     const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
@@ -157,9 +158,57 @@ async function EditarEmpleado(req,res){
         message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
         });
     }
+
+    const existingEmpleado = await Empleado.findOne({ _id: perfilID });
+    
+    if (!existingEmpleado) {
+        return res.status(400).json({
+            status: '400 BAD REQUEST',
+            message: 'No existe el Usuario'
+        });
+    }
+
+    let filePath = existingEmpleado.rutaFoto;
+    
+    if(file){
+
+        try {
+            await fsextra.remove(existingEmpleado.rutaFoto);
+
+        } catch (removeError) {
+            console.error("Error al intentar eliminar el archivo:", removeError.message);
+        }
+
+        const sharpFile = sharp(req.file.buffer).resize(200, 200, { fit: 'cover' })
+        const sharpEnd = await sharpFile.toBuffer()
+    
+        // Crear la carpeta personalizada
+        const userFolderPath = path.join('uploads', existingEmpleado.idUsuario)
+        await fsextra.ensureDir(userFolderPath)
+    
+        // Generar un nombre único para la imagen
+        const fileExtension = path.extname(file.originalname)
+        const fileName = `picture_${Date.now()}${fileExtension}`
+         filePath = path.join(userFolderPath, fileName).replace(/\\/g, '/');
+        // Cambiar las barras invertidas (\) por barras normales (/)
+
+    
+        
+        await new Promise((resolve, reject) => {
+            fs.writeFile(filePath, sharpEnd, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+            });
+        });
+    }
+    
     
     try {
-        const empleadoEdit = await Empleado.findByIdAndUpdate(perfilId, cuerpo, { new: true }).lean()
+        const empleadoEdit = await Empleado.findByIdAndUpdate(
+            perfilID,{ ...cuerpo, rutaFoto : filePath}, { new: true }).lean()
         return !empleadoEdit ?  res.status(404).json({
                 status: '404 NOT FOUND',
                 message: 'EL USUARIO NO EXISTE'
@@ -179,8 +228,51 @@ async function EditarEmpleado(req,res){
     }
 }
 
+async function BuscarEmpleado(req, res) {
+    const cuerpo = req.body
+
+    // Validar el cuerpo
+    const camposPermitidos = ['nombre', 'dni', 'date','ciudad','rol'];
+    const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
+    
+    if (camposInvalidos.length > 0) {
+        return res.status(400).json({
+        status: '400 BAD REQUEST',
+        message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
+        });
+    }
+
+    try {
+        // Realizar la búsqueda directamente con el cuerpo
+        const empleados = await Empleado.find(cuerpo);
+
+        // Validar si hay resultados
+        if (empleados.length === 0) {
+            return res.status(404).json({
+                status: '404 NOT FOUND',
+                message: 'No se encontraron empleados con los criterios proporcionados.',
+            });
+        }
+
+        // Responder con los empleados encontrados
+        return res.status(200).json({
+            status: '200 OK',
+            message: 'Empleados encontrados.',
+            data: empleados,
+        });
+    } catch (error) {
+        // Manejo de errores
+        return res.status(500).json({
+            status: '500 INTERNAL SERVER ERROR',
+            message: `Error al buscar empleados: ${error.message}`,
+        });
+    }
+
+}
+
 module.exports = {
     RegistrarEmpleado,
     AllEmpleados,
     EditarEmpleado,
+    BuscarEmpleado,
 }

@@ -109,6 +109,16 @@ async function RegistrarCliente(req, res) {
         });
 
     } catch (error) {
+
+        // Si se creó un archivo, eliminarlo
+        if (filePath) {
+            try {
+                await fsextra.remove(filePath);
+                console.log("Archivo eliminado debido a un error.");
+            } catch (removeError) {
+                console.error("Error al intentar eliminar el archivo:", removeError.message);
+            }
+        }
         res.status(500).json({
             status: '500 ERROR INTERNO DE SERVIDOR',
             message: `Error al intentar guardar el Cliente: ${error.message}`
@@ -143,11 +153,13 @@ async function AllClientes(req, res) {
 
 async function EditarCliente(req,res){
     
-    const  userId  = req.params.userID;
+    
+    const  perfilID  = req.params.id;
     const cuerpo = req.body;
+    const file = req.file;
 
     // Validar el cuerpo
-    const camposPermitidos = ['nombre', 'apellido', 'correo', 'password','amigos','seguidores','picture'];
+    const camposPermitidos = ['nombre', 'apellido', 'dni', 'date','ciudad','sexo'];
     const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
     
     if (camposInvalidos.length > 0) {
@@ -156,17 +168,65 @@ async function EditarCliente(req,res){
         message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
         });
     }
+
+    const existingCliente = await Cliente.findOne({ _id: perfilID });
+    
+    if (!existingCliente) {
+        return res.status(400).json({
+            status: '400 BAD REQUEST',
+            message: 'No existe el Usuario'
+        });
+    }
+
+    let filePath = existingCliente.rutaFoto;
+    
+    if(file){
+
+        try {
+            await fsextra.remove(existingCliente.rutaFoto);
+
+        } catch (removeError) {
+            console.error("Error al intentar eliminar el archivo:", removeError.message);
+        }
+
+        const sharpFile = sharp(req.file.buffer).resize(200, 200, { fit: 'cover' })
+        const sharpEnd = await sharpFile.toBuffer()
+    
+        // Crear la carpeta personalizada
+        const userFolderPath = path.join('uploads', existingCliente.idUsuario)
+        await fsextra.ensureDir(userFolderPath)
+    
+        // Generar un nombre único para la imagen
+        const fileExtension = path.extname(file.originalname)
+        const fileName = `picture_${Date.now()}${fileExtension}`
+         filePath = path.join(userFolderPath, fileName).replace(/\\/g, '/');
+        // Cambiar las barras invertidas (\) por barras normales (/)
+
+
+        
+        await new Promise((resolve, reject) => {
+            fs.writeFile(filePath, sharpEnd, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+            });
+        });
+    }
+    
     
     try {
-        const userUpdated = await User.findByIdAndUpdate(userId, cuerpo, { new: true }).lean()
-        return !userUpdated ?  res.status(404).json({
+        const clienteEdit = await Cliente.findByIdAndUpdate(
+            perfilID,{ ...cuerpo, rutaFoto : filePath}, { new: true }).lean()
+        return !clienteEdit ?  res.status(404).json({
                 status: '404 NOT FOUND',
                 message: 'EL USUARIO NO EXISTE'
             })
         :
         res.status(200).json({ 
             status: "200 OK",
-            user: userUpdated 
+            user: clienteEdit 
         });
     }
       
@@ -178,9 +238,52 @@ async function EditarCliente(req,res){
     }
 }
 
+async function BuscarCliente(req, res) {
+    const cuerpo = req.body
+
+    // Validar el cuerpo
+    const camposPermitidos = ['nombre', 'dni', 'date','ciudad','rol'];
+    const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
+    
+    if (camposInvalidos.length > 0) {
+        return res.status(400).json({
+        status: '400 BAD REQUEST',
+        message: `CAMPOS NO PERMITIDOS: ${camposInvalidos.join(', ')}`,
+        });
+    }
+
+    try {
+        // Realizar la búsqueda directamente con el cuerpo
+        const cliente = await Cliente.find(cuerpo);
+
+        // Validar si hay resultados
+        if (cliente.length === 0) {
+            return res.status(404).json({
+                status: '404 NOT FOUND',
+                message: 'No se encontraron cliente(s) con los criterios proporcionados.',
+            });
+        }
+
+        // Responder con los empleados encontrados
+        return res.status(200).json({
+            status: '200 OK',
+            message: 'Cliente(s) encontrados.',
+            data: cliente,
+        });
+    } catch (error) {
+        // Manejo de errores
+        return res.status(500).json({
+            status: '500 INTERNAL SERVER ERROR',
+            message: `Error al buscar cliente(s): ${error.message}`,
+        });
+    }
+
+}
+
 module.exports = {
     RegistrarCliente,
     AllClientes,
     EditarCliente,
+    BuscarCliente,
     
 }

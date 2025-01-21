@@ -256,16 +256,15 @@ async function emailDisponible(req, res){
 
         const  email  = req.body.email;
 
-        console.log(email)
         // Buscar usuario en la colección de usuarios
         const usuario = await Usuario.findOne({ email });
 
         if (usuario) {
-            console.log("No se puede")
+
             return res.status(404).send({ message: 'Email no disponible' });
         }
 
-        console.log("Se puede")
+
         res.status(200).json({
             status: "200 OK",
             message:'Email Dispònible'

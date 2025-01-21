@@ -37,6 +37,14 @@ api.put(
   empleadoController.EditarEmpleado
 );
 
+api.post(
+  '/buscarEmpleado',
+  auth,
+  authz(['Administrador','Empleado']), 
+  upload.single('picture'),
+  empleadoController.BuscarEmpleado
+);
+
 // // Los empleados también pueden registrar clientes
 // api.post(
 //     '/registrarCliente',

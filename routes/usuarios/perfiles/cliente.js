@@ -21,8 +21,6 @@ api.post(
     clienteController.RegistrarCliente
 );
 
-
-
 api.get(
   '/getAllClientes',
   auth,
@@ -30,11 +28,20 @@ api.get(
   clienteController.AllClientes
 );
 
-api.get(
+api.put(
   '/editarCliente/:id',
   auth,
   authz(['Administrador','Empleado']), 
+  upload.single('picture'),
   clienteController.EditarCliente
+);
+
+api.post(
+  '/buscarCliente',
+  auth,
+  authz(['Administrador','Empleado']), 
+  upload.single('picture'),
+  clienteController.BuscarCliente
 );
 
 module.exports = api;
