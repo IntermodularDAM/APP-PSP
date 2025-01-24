@@ -2,8 +2,8 @@ const Habitacion = require('../../models/habitaciones/habitacion');
 
 const crearHabitacion = async (req, res) => {
     try {
-        const { _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, estado } = req.body;
-        const habitacion = new Habitacion({ _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, estado });
+        const { _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado } = req.body;
+        const habitacion = new Habitacion({ _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado });
         await habitacion.save();
         res.status(201).json(habitacion);
     } catch (error) {
@@ -40,7 +40,7 @@ const obtenerHabitacionPorId = async (req, res) => {
 // Actualizar una reserva completamente (PUT)
 const actualizarHabitacion= async (req, res) => {
     const { _id } = req.params;
-    const { num_planta, tipo, capacidad, descripcion, opciones, precio_noche, estado } = req.body;
+    const { num_planta, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado } = req.body;
     try {
         const habitacion = await Habitacion.findOneAndUpdate({_id}, { 
             num_planta,
@@ -49,6 +49,8 @@ const actualizarHabitacion= async (req, res) => {
             descripcion,
             opciones,
             precio_noche,
+            precio_noche_original,
+            tieneOferta,
             estado
         }, { new: true });
 
