@@ -11,8 +11,10 @@ const habitacionSchema = new mongoose.Schema({
         Cuna: { type: Boolean}       // Campo para Cuna
     },
     precio_noche: { type: Number, required: true }, // Usamos el mismo nombre que en el backend
+    precio_noche_original: { type: Number },         // Precio original (antes de oferta), opcional
+    tieneOferta: { type: Boolean, default: false },
     estado: { type: Boolean, default: true }        // Estado por defecto
-}, { _id: false }); // No generar _id para cada documento individual, se usará el campo _id manualmente.
+}, { _id: false }); // No generar _id para cada documento individual, se usarÃ¡ el campo _id manualmente.
 
 
 habitacionSchema.pre('save', async function (next) {
@@ -25,18 +27,18 @@ habitacionSchema.pre('save', async function (next) {
             .find({ num_planta: habitaciones.num_planta })
             .exec();
 
-        // Generar ID para la nueva habitación
+        // Generar ID para la nueva habitaciÃ³n
         let newId = `H-${(habitaciones.num_planta * 100) + 1}`; // Valor predeterminado
 
         if (habitacionesEnPlanta.length > 0) {
-            // Encontrar el número más alto de las habitaciones existentes
+            // Encontrar el nÃºmero mÃ¡s alto de las habitaciones existentes
             const highestId = Math.max(
                 ...habitacionesEnPlanta.map((habitacion) =>
                     parseInt(habitacion._id.split('-')[1], 10)
                 )
             );
 
-            // Incrementar el número secuencial más alto
+            // Incrementar el nÃºmero secuencial mÃ¡s alto
             newId = `H-${highestId + 1}`;
         }
 
