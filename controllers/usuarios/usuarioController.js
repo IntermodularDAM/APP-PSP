@@ -5,6 +5,7 @@ const Empleado = require("../../models/usuarios/perfiles/empleado");
 const service = require('../../services')
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
+const config = require("../../config")
 
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
@@ -29,15 +30,15 @@ async function registroUsuario(req, res) {
         }
 
 
-        //Verificar si ya existe un usuario con el mismo correo electrónico
-        const existingUser = await Usuario.findOne({ email: data.email });
+        // //Verificar si ya existe un usuario con el mismo correo electrónico
+        // const existingUser = await Usuario.findOne({ email: data.email });
 
-        if (existingUser) {
-            return res.status(400).json({
-                status: '400 BAD REQUEST',
-                message: 'API: Ya existe un usuario con el correo electrónico proporcionado'
-            });
-        }
+        // if (existingUser) {
+        //     return res.status(400).json({
+        //         status: '400 BAD REQUEST',
+        //         message: 'API: Ya existe un usuario con el correo electrónico proporcionado'
+        //     });
+        // }
 
         // Generar un código único y su fecha de expiración
         const verificationCode = crypto.randomInt(100000, 999999).toString(); // Código numérico de 6 dígitos
@@ -62,25 +63,31 @@ async function registroUsuario(req, res) {
          const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'sr.leobardo@gmail.com',
-                pass: 'tleq zdii xikz mrsb',
+                user: config.MAIL_APPLICATION,
+                pass: config.PASSWOR_APPLICATION,
             },
         });
 
         const mailOptions = {
-            from: 'sr.leobardo@gmail.com',
+            from: config.MAIL_APPLICATION,
             to: savedUser.email,
             subject: 'Código de Verificación',
-            text: `Hola, tu código de verificación es ${verificationCode}. Este código expirará en 10 minutos.`,
+            text: `Hola, tu código de verificación es ${verificationCode}. 
+            \nTu email para usar la app es:  ${usuario.emailApp}. 
+            \nTu contraseña de acceso: ${data.password}
+            \nGracias por registrarte.`,
         };
 
         await transporter.sendMail(mailOptions);
+
+        console.log("Usuario Creado: "+savedUser)
 
         res.status(200).json({
             status: "200 OK",
             message: "API : Usuario guardado exitosamente",
             data: { 
-                email:savedUser.email
+                email:savedUser.email,
+                id:savedUser._id
             }
         });
 
@@ -99,10 +106,12 @@ async function registroUsuario(req, res) {
 
 async function verificarUsuario(req, res) {
     try {
-        const { email, verificationCode } = req.body;
+        const { email, verificationCode, _id } = req.body;
+        console.log(email);
+        console.log(_id);
 
         // Buscar el usuario por email
-        const user = await Usuario.findOne({ email });
+        const user = await Usuario.findOne({ email: email, _id:_id });
 
         if (!user) {
             return res.status(404).json({
@@ -135,7 +144,7 @@ async function verificarUsuario(req, res) {
         res.status(200).json({
             status: "200 OK",
             message: "API : Usuario verificado exitosamente",
-            data: {email:user.email,
+            data: {email:user.emailApp,
                 idUsuario:user._id}
         });
     } catch (error) {
@@ -149,6 +158,7 @@ async function verificarUsuario(req, res) {
 async function logIn(req, res){
 
     try {
+        console.log("Se intento login")
 
         const { email, password } = req.body;
 
@@ -156,13 +166,13 @@ async function logIn(req, res){
         const usuario = await Usuario.findOne({ email });
 
         if (!usuario) {
-            return res.status(404).send({ message: 'Usuario no encontrado' });
+            return res.status(404).send({status:'Error 404' ,message: 'Email no encontrado' });
         }
 
         // Verificar contraseña
         const passwordMatch = await bcrypt.compare(password, usuario.password);
         if (!passwordMatch) {
-            return res.status(401).send({ message: 'Contraseña incorrecta' });
+            return res.status(401).send({status:'Error 404' , message: 'Contraseña incorrecta' });
         }
 
         // Buscar perfil asociado (Administrador o Empleado)
@@ -180,11 +190,19 @@ async function logIn(req, res){
         }
 
         const Token = service.createToken(usuario._id, perfil.rol);
+        const AppToken = service.createSimpleToken();
+
+        console.log(perfil)
+
         res.status(200).json({
             status: "200 OK",
             message:'LOGEADO',
-            data : { token: Token,
-            user:perfil}
+            data : { 
+                token: Token,
+                appToken: AppToken,
+                user:perfil
+
+            }
            
         }) 
 
@@ -250,6 +268,7 @@ async function  todosLosUsuarios(req,res){
 }
 
 async function emailDisponible(req, res){
+    
 
     try {
 
@@ -277,13 +296,23 @@ async function emailDisponible(req, res){
     }
 }
 
+async function ok (rep, res){
+    res.status(200).json({
+        status: "200 OK",
+        message:'Token valido'
+
+       
+    }) 
+}
+
 module.exports = {
     registroUsuario,
     verificarUsuario,
     logIn,
     eliminarUsuario,
     todosLosUsuarios,
-    emailDisponible
+    emailDisponible,
+    ok
 }
 
 

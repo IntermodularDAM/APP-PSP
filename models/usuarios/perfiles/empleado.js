@@ -15,6 +15,7 @@ const EmpleadoSchema = new mongoose.Schema({
     sexo : { type: String, required: true },
     registro:{type: Date, default: Date.now()},
     rutaFoto : { type: String, required: true },
+    baja:{type :Date },
 
     puesto : String,
     salario : Number,

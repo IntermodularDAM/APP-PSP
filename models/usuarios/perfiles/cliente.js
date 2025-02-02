@@ -15,6 +15,7 @@ const ClienteSchema = new mongoose.Schema({
     sexo : { type: String, required: true },
     registro:{type: Date, default: Date.now()},
     rutaFoto : { type: String, required: true },
+    baja:{type :Date },
 
     telefono : String,
     vip : Boolean, 

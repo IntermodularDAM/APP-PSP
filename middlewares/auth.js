@@ -1,26 +1,50 @@
 'use strict'
-
-
+  
 const services = require('../services')
 
 function isAuth(req, res, next) {
     if (!req.headers.authorization) {
-       return res.status(403).send({ message:'No tienes autorización'}) 
-    }
- 
+       return res.status(403).send({ message:'No tienes autorización'}) ;
+    } 
     const token = req.headers.authorization.split(' ')[1]
-
     services.decodeToken(token)
     .then(response =>{
+        // if (!response || !response.sub || !response.role) {
+        //     throw { status: 401, message: "Token inválido o mal formado" };
+        // }
+
         req.user = { id: response.sub, role: response.role };
         next()
     })
-    .catch(response => { 
-        res.status(response.status).send({ message: response.message });
+    .catch(error => { 
+        //res.status(response.status).send({ message: response.message });
+        console.error("Error en decodeToken:", error); 
+        const status = error.status || 500; 
+        const message = error.message || "Error interno del servidor";
+        res.status(status).send({ message });
     })  
 }    
+
+// Middleware para verificar si el token simple sigue siendo válido
+function verifyToken(req, res) {
+    if (!req.headers.authorization) {
+        return res.status(403).send({ message: 'No tienes autorización' });
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    services.verifySimpleToken(token)
+        .then(() => {
+            return res.status(200).send({ message: 'Token válido' });
+    
+        })
+        .catch(response => {
+            return res.status(response.status).send({ status: response.status,message: response.message });
+        });
+}
  
-module.exports = isAuth
+module.exports = {
+    isAuth,
+    verifyToken
+}
 
 // Ruta : "services\index.js"
 // 'use strict'

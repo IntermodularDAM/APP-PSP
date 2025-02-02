@@ -23,13 +23,18 @@ api.delete(
 );
 api.get(
     '/todosLosUsuarios',
-    auth,
+    auth.isAuth,
     authz(["Administrador","Empleado"]),
     usuarioController.todosLosUsuarios
 );
 api.post(
     '/emailDisponible'
     ,usuarioController.emailDisponible
+);
+api.get(
+    '/accessToken',
+    auth.verifyToken,
+    usuarioController.ok
 );
 
 
