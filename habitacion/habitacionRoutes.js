@@ -12,7 +12,7 @@ const {
 } = require('../../controllers/habitacion/habitacionController');
 
 
-router.post('/habitaciones', auth, crearHabitacion);
+router.post('/habitaciones', crearHabitacion);
 
 // Obtener todas las habitaciones (GET)
 router.get('/habitaciones', obtenerHabitaciones);
@@ -21,13 +21,13 @@ router.get('/habitaciones', obtenerHabitaciones);
 router.get('/habitaciones/:id', obtenerHabitacionPorId);
 
 // Actualizar una habitacion completamente (PUT)
-router.put('/habitaciones/:id', actualizarHabitacion);
+router.put('/Actualizar/:id', actualizarHabitacion);
 
 // Actualizar parcialmente una habitacion (PATCH)
 router.patch('/habitaciones/:id', actualizarHabitacionParcial);
 
 // Eliminar una habitacion (DELETE)
-router.delete('/habitaciones/:id', eliminarHabitacion);
+router.delete('/Eliminar/:id', eliminarHabitacion);
 
 module.exports = router;
 
