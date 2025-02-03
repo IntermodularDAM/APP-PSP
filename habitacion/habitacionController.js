@@ -3,8 +3,8 @@ const { body, validationResult } = require('express-validator');
 
 const crearHabitacion = async (req, res) => {
     try {
-        const { _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado } = req.body;
-        const habitacion = new Habitacion({ _id, num_planta, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado });
+        const { _id, num_planta, nombre, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado, imagenBase64 } = req.body;
+        const habitacion = new Habitacion({ _id, num_planta, nombre, tipo, capacidad, descripcion, opciones, precio_noche, precio_noche_original, tieneOferta, estado, imagenBase64 });
         await habitacion.save();
         res.status(201).json(habitacion);
     } catch (error) {
@@ -40,46 +40,52 @@ const obtenerHabitacionPorId = async (req, res) => {
 
 async function actualizarHabitacion(req, res) {
     try {
-        // ValidaciÃ³n de campos requeridos
+        // Validación de campos requeridos
         await body('_id').notEmpty().withMessage('El campo "_id" es requerido').run(req);
         await body('num_planta').notEmpty().withMessage('El campo "num_planta" es requerido').run(req);
+        await body('nombre').notEmpty().withMessage('El campo "nombre" es requerido').run(req);
         await body('tipo').notEmpty().withMessage('El campo "tipo" es requerido').run(req);
         await body('capacidad').notEmpty().withMessage('El campo "capacidad" es requerido').run(req);
         await body('descripcion').notEmpty().withMessage('El campo "descripcion" es requerido').run(req);
         //await body('precio_noche').notEmpty().withMessage('El campo "precio_noche" es requerido').run(req);
 
-        // Obtener los errores de validaciÃ³n
+        // Obtener los errores de validación
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({
                 status: '400 BAD REQUEST',
-                message: 'API: Errores de validaciÃ³n',
+                message: 'API: Errores de validación',
                 errors: errors.array()
             });
         }
 
         // Desestructuramos los datos enviados en la solicitud
-        const { _id, num_planta, tipo, capacidad, descripcion, opciones } = req.body;
+        const { _id, num_planta, nombre, tipo, capacidad, descripcion, opciones, imagenBase64 } = req.body;
 
-        console.log(`Recibiendo datos de la habitaciÃ³n:`, req.body);
+        console.log(`Recibiendo datos de la habitación:`, req.body);
 
-        // Buscar la habitaciÃ³n en la base de datos
+        // Buscar la habitación en la base de datos
         const habitacion = await Habitacion.findOne({ _id: String(_id) });
         if (!habitacion) {
             return res.status(404).json({
                 status: '404 NOT FOUND',
-                message: `No se ha encontrado la habitaciÃ³n con el ID ${_id}.`
+                message: `No se ha encontrado la habitación con el ID ${_id}.`
             });
         }
 
-        // Mostrar los valores previos de la habitaciÃ³n antes de realizar cambios
-        console.log(`HabitaciÃ³n encontrada:`, habitacion);
+        // Mostrar los valores previos de la habitación antes de realizar cambios
+        console.log(`Habitación encontrada:`, habitacion);
 
-        // ActualizaciÃ³n de los demÃ¡s campos
+        // Actualización de los demás campos
         let camposActualizados = false;
         if (habitacion.num_planta !== num_planta) {
             console.log(`Actualizando num_planta: ${num_planta}`);
             habitacion.num_planta = num_planta;
+            camposActualizados = true;
+        }
+        if (habitacion.nombre !== nombre) {
+            console.log(`Actualizando nombre: ${nombre}`);
+            habitacion.nombre = nombre;
             camposActualizados = true;
         }
         if (habitacion.tipo !== tipo) {
@@ -102,9 +108,15 @@ async function actualizarHabitacion(req, res) {
             habitacion.opciones = opciones;
             camposActualizados = true;
         }
+        if (imagenBase64) {
+            console.log(`Actualizando imagen: ${imagenBase64}`)
+            habitacion.imagenBase64 = imagenBase64;
+            camposActualizados = true;
+        }
 
+        
         /*
-         // LÃ³gica de actualizaciÃ³n de precios
+         // Lógica de actualización de precios
          if (!tieneOferta) {
             // Si no tiene oferta, actualizamos el precio_noche_original con el mismo valor de precio_noche
             console.log(`Sin oferta, actualizando precio_noche_original: ${precio_noche}`);
@@ -119,12 +131,13 @@ async function actualizarHabitacion(req, res) {
             camposActualizados = true;
         }
 
-        // ActualizaciÃ³n del estado
+        // Actualización del estado
         if (estado !== habitacion.estado) {
             console.log(`Actualizando estado: ${estado}`);
             habitacion.estado = estado; // Si el estado es diferente, actualizamos
             camposActualizados = true;
         }*/
+
 
         // Si alguno de los campos ha cambiado, lo guardamos
         if (camposActualizados) {
@@ -133,15 +146,15 @@ async function actualizarHabitacion(req, res) {
         } else {
             return res.status(200).json({
                 status: '200 OK',
-                message: 'No se realizaron cambios, la habitaciÃ³n ya estÃ¡ actualizada.',
+                message: 'No se realizaron cambios, la habitación ya está actualizada.',
                 habitacion
             });
         }
 
-        // Responder con la habitaciÃ³n actualizada
+        // Responder con la habitación actualizada
         res.status(200).json({
             status: '200 OK',
-            message: 'HabitaciÃ³n modificada exitosamente.',
+            message: 'Habitación modificada exitosamente.',
             habitacion,
         });
 
@@ -150,13 +163,11 @@ async function actualizarHabitacion(req, res) {
         console.error(err);
         res.status(500).json({
             status: '500 INTERNAL SERVER ERROR',
-            message: 'OcurriÃ³ un error al intentar actualizar la habitaciÃ³n.',
+            message: 'Ocurrió un error al intentar actualizar la habitación.',
             error: err.message
         });
     }
 }
-
-
 
 
 // Actualizar parcialmente una reserva (PATCH)
@@ -197,31 +208,31 @@ const eliminarHabitacion = async (req, res) => {
 // Modifica tu ruta para que use params en lugar de body
 async function eliminarHabitacion(req, res) {
     try {
-        // Obtener el ID desde los parÃ¡metros de la URL
+        // Obtener el ID desde los parámetros de la URL
         const { id } = req.params;
 
-        console.log(`Buscando la habitaciÃ³n con ID: ${id}`);
+        console.log(`Buscando la habitación con ID: ${id}`);
 
-        // Buscar la habitaciÃ³n en la base de datos
+        // Buscar la habitación en la base de datos
         const habitacion = await Habitacion.findOne({ _id: String(id) });
         if (!habitacion) {
             return res.status(404).json({
                 status: '404 NOT FOUND',
-                message: `No se ha encontrado la habitaciÃ³n con el ID ${id}.`
+                message: `No se ha encontrado la habitación con el ID ${id}.`
             });
         }
 
-        console.log(`HabitaciÃ³n encontrada:`, habitacion);
+        console.log(`Habitación encontrada:`, habitacion);
 
-        // Eliminar la habitaciÃ³n
+        // Eliminar la habitación
         await Habitacion.deleteOne({ _id: String(id) });
 
-        console.log(`HabitaciÃ³n con ID ${id} eliminada exitosamente.`);
+        console.log(`Habitación con ID ${id} eliminada exitosamente.`);
 
         // Respuesta exitosa
         res.status(200).json({
             status: '200 OK',
-            message: 'HabitaciÃ³n eliminada exitosamente.',
+            message: 'Habitación eliminada exitosamente.',
             habitacion
         });
     } catch (err) {
@@ -229,7 +240,7 @@ async function eliminarHabitacion(req, res) {
         console.error(err);
         res.status(500).json({
             status: '500 INTERNAL SERVER ERROR',
-            message: 'OcurriÃ³ un error al intentar eliminar la habitaciÃ³n.',
+            message: 'Ocurrió un error al intentar eliminar la habitación.',
             error: err.message
         });
     }
