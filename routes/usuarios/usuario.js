@@ -34,7 +34,11 @@ api.post(
 api.get(
     '/accessToken',
     auth.verifyToken,
-    usuarioController.ok
+);
+
+api.post(
+    '/recuperarPassword',
+    usuarioController.recuperarPassword,
 );
 
 

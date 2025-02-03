@@ -2,6 +2,7 @@
 const Usuario = require("../../models/usuarios/usuario")
 const Administrador = require("../../models/usuarios/perfiles/administrador");
 const Empleado = require("../../models/usuarios/perfiles/empleado");
+const Cliente = require("../../models/usuarios/perfiles/cliente");
 const service = require('../../services')
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
@@ -21,7 +22,7 @@ async function registroUsuario(req, res) {
         await body('password').notEmpty().withMessage('El campo "password" es requerido').run(req);
  
         const errors = validationResult(req);
-        if (!errors.isEmpty()) { 
+        if (!errors.isEmpty()) {  
             return res.status(400).json({
                 status: '400 BAD REQUEST',
                 message: 'API: Errores de validación',
@@ -73,7 +74,7 @@ async function registroUsuario(req, res) {
             to: savedUser.email,
             subject: 'Código de Verificación',
             text: `Hola, tu código de verificación es ${verificationCode}. 
-            \nTu email para usar la app es:  ${usuario.emailApp}. 
+            \nTu email para usar la app es:  ${savedUser.emailApp}. 
             \nTu contraseña de acceso: ${data.password}
             \nGracias por registrarte.`,
         };
@@ -87,6 +88,7 @@ async function registroUsuario(req, res) {
             message: "API : Usuario guardado exitosamente",
             data: { 
                 email:savedUser.email,
+                email:savedUser.emailApp,
                 id:savedUser._id
             }
         });
@@ -104,14 +106,16 @@ async function registroUsuario(req, res) {
 
 }
 
+
+
 async function verificarUsuario(req, res) {
     try {
-        const { email, verificationCode, _id } = req.body;
-        console.log(email);
+        const { emailApp, verificationCode, _id } = req.body;
+        console.log(emailApp);
         console.log(_id);
 
         // Buscar el usuario por email
-        const user = await Usuario.findOne({ email: email, _id:_id });
+        const user = await Usuario.findOne({ emailApp: email, _id:_id });
 
         if (!user) {
             return res.status(404).json({
@@ -144,7 +148,7 @@ async function verificarUsuario(req, res) {
         res.status(200).json({
             status: "200 OK",
             message: "API : Usuario verificado exitosamente",
-            data: {email:user.emailApp,
+            data: {emailApp:user.emailApp,
                 idUsuario:user._id}
         });
     } catch (error) {
@@ -181,12 +185,12 @@ async function logIn(req, res){
             (await Empleado.findOne({ idUsuario: usuario._id }));
 
         if (!perfil) {
-            return res.status(403).send({ message: 'Perfil no autorizado' });
+            return res.status(403).send({status:'Error 403' , message: 'Perfil no autorizado' });
         }
 
         // Verificar roles permitidos
         if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado') {
-            return res.status(403).send({ message: 'Rol no permitido' });
+            return res.status(403).send({status:'Error 403' , message: 'Rol no permitido' });
         }
 
         const Token = service.createToken(usuario._id, perfil.rol);
@@ -217,16 +221,16 @@ async function logIn(req, res){
         // res.status(200).send({ token, rol: perfil.rol });
     } catch (error) {
         console.error(error);
-        res.status(500).send({ message: 'Error interno del servidor' });
+        res.status(500).send({status:'Error 500' , message: 'Error interno del servidor' });
     }
 }
 
 async function eliminarUsuario(req,res){
 
-    const  email  = req.body.email;
-    console.log(email)
+    const  emailApp  = req.body.emailApp;
+    console.log(emailApp)
     try{
-        const user = await Usuario.deleteOne({email});
+        const user = await Usuario.deleteOne({emailApp});
         if (user.deletedCount === 0) {
             return res.status(404).json({
                 status: "404 NOT FOUND",
@@ -296,14 +300,85 @@ async function emailDisponible(req, res){
     }
 }
 
-async function ok (rep, res){
-    res.status(200).json({
-        status: "200 OK",
-        message:'Token valido'
 
-       
-    }) 
+async function recuperarPassword(req, res){
+
+    try {
+        console.log("Se intento recuperar")
+
+        const  email  = req.body.email;
+        console.log(email)
+
+        // Buscar usuario en la colección de usuarios
+        const usuario = await Usuario.findOne({ email });
+
+        if (!usuario) {
+            return res.status(404).send({status:'Error 404', header: 'Email no encontrado' ,message: 'Verifica tu email' });
+        }
+
+
+        // Buscar perfil asociado (Administrador o Empleado)
+        const perfil =
+            (await Administrador.findOne({ idUsuario: usuario._id })) ||
+            (await Cliente.findOne({ idUsuario: usuario._id })) ||
+            (await Empleado.findOne({ idUsuario: usuario._id }));
+
+        if (!perfil) {
+            return res.status(403).send({ message: 'Perfil no autorizado' });
+        }
+
+        // Verificar roles permitidos
+        if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado' && perfil.rol !== 'Cliente') { //"estrictamente diferente" de manera que los roles podrian ser cualquier dato no tan explicito
+            return res.status(403).send({ message: 'Rol no permitido' });
+        }
+
+         // 1. Generar una contraseña temporal aleatoria
+         const nuevaPasswordTemporal = crypto.randomBytes(6).toString('hex')+"Nd0"; // Ej: "a1b2c3d4"
+
+         // 2. Hashear la nueva contraseña temporal
+         const hashedPassword = await bcrypt.hash(nuevaPasswordTemporal, 10);
+ 
+         // 3. Guardar la nueva contraseña en la base de datos
+         usuario.password = hashedPassword;
+         await usuario.save();
+ 
+
+         // Enviar el correo con el código de verificación
+         const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: config.MAIL_APPLICATION,
+                pass: config.PASSWOR_APPLICATION,
+            },
+        });
+
+        const mailOptions = {
+            from: config.MAIL_APPLICATION,
+            to: usuario.email,
+            subject: 'Recuperación de Contraseña',
+            text: `Hola. ${perfil.nombre}
+            \nSe ha generado una nueva contraseña temporal para tu cuenta: ${usuario.emailApp}
+            \nTe recomendamos iniciar sesión y cambiarla de inmediato por una más segura.
+            \nTu contraseña de acceso temporal: ${nuevaPasswordTemporal}
+            \nSaludos.
+            \nEl equipo de NightDays.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            status: "200 OK",
+            header:'Verifica tu email.',
+            message:`Se ha enviado una nueva contraseña a: \n ${usuario.email}.`,       
+        }) 
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({  status: "500 Error Interno",
+            header:'Fallo en el servidor',message: 'Error interno del servidor' });
+    }
 }
+
+
 
 module.exports = {
     registroUsuario,
@@ -312,8 +387,15 @@ module.exports = {
     eliminarUsuario,
     todosLosUsuarios,
     emailDisponible,
-    ok
+    recuperarPassword,
+ 
 }
 
+//NOTAS:
 
-
+//Por si se requiere convertir alguna imagen a base64
+// const imageBuffer = req.file.buffer; // Suponiendo que req.file contiene los datos de la imagen
+// const base64String = bufferToBase64(imageBuffer);
+// function bufferToBase64(buffer) {
+//     return buffer.toString('base64'); 
+// }

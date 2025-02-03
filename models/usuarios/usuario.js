@@ -7,7 +7,7 @@ const UsuarioSchema = new mongoose.Schema({
     idPerfil: { type: String },
     email: { type: String, required: true },
     emailApp: { type: String, unique: true },
-    password: { type: String, required: true },
+    password: { type: String,  required: true },// se establece la opción "select" como false, lo que significa que cuando se realice una consulta a la base de datos, este campo no se incluirá por defecto en los resultados.
     registro: { type: Date, default: Date.now() },
     verificationCode: String, // Código de verificación
     codeExpiresAt: Date, // Fecha de expiración del código
