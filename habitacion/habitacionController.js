@@ -114,29 +114,16 @@ async function actualizarHabitacion(req, res) {
             camposActualizados = true;
         }
 
-        
-        /*
-         // Lógica de actualización de precios
-         if (!tieneOferta) {
-            // Si no tiene oferta, actualizamos el precio_noche_original con el mismo valor de precio_noche
-            console.log(`Sin oferta, actualizando precio_noche_original: ${precio_noche}`);
-            habitacion.precio_noche = precio_noche;
-            habitacion.precio_noche_original = precio_noche;
-            camposActualizados = true; // Si no tiene oferta, el precio original es igual al precio de la noche
+        // Actualización de tieneOferta basado en la comparación de precios
+        if (habitacion.precio_noche < habitacion.precio_noche_original) {
+            console.log('Precio con oferta, actualizando tieneOferta a true');
+            habitacion.tieneOferta = true;
+            camposActualizados = true;
         } else {
-            // Si tiene oferta, actualizamos el precio_noche y precio_noche_original con los valores correspondientes
-            console.log(`Con oferta, actualizando precio_noche: ${precio_noche} y precio_noche_original: ${precio_noche_original}`);
-            habitacion.precio_noche = precio_noche;
-            habitacion.precio_noche_original = precio_noche_original;
+            console.log('Precio sin oferta, actualizando tieneOferta a false');
+            habitacion.tieneOferta = false;
             camposActualizados = true;
         }
-
-        // Actualización del estado
-        if (estado !== habitacion.estado) {
-            console.log(`Actualizando estado: ${estado}`);
-            habitacion.estado = estado; // Si el estado es diferente, actualizamos
-            camposActualizados = true;
-        }*/
 
 
         // Si alguno de los campos ha cambiado, lo guardamos
