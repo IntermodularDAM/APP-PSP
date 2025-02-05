@@ -7,20 +7,26 @@ const fs = require('fs')
 const { body, validationResult } = require('express-validator');
 const fsextra = require('fs-extra');
 const path = require('path');
+const service = require('../../../services')
 
 
 async function GuardarAdministrador(req, res) {
  
+    let filePath;
+
     try {
 
         const data = req.body;
         const file = req.file
 
-        console.log("Data: ", JSON.stringify(data, null, 2));
-        console.log("File: "+file)
+        // console.log("Data: ", JSON.stringify(data, null, 2));
+        // console.log("File: "+file)
+
+        console.log(data);
     
         await body('idUsuario').notEmpty().withMessage('El campo "idUsuario" es requerido').run(req);
         await body('nombre').notEmpty().withMessage('El campo "idUsuario" es requerido').run(req);
+        await body('email').notEmpty().withMessage('El campo "email" es requerido').isEmail().run(req);
         await body('apellido').notEmpty().withMessage('El campo "password" es requerido').run(req);
         await body('rol').notEmpty().withMessage('El campo "password" es requerido').run(req);
         await body('dni').notEmpty().withMessage('El campo "password" es requerido').run(req);
@@ -45,7 +51,7 @@ async function GuardarAdministrador(req, res) {
 
 
         //Verificar si ya existe un usuario con el mismo correo electrónico
-        const existingUser = await Usuario.findOne({ _id: data.idUsuario });
+        const existingUser = await Usuario.findOne({ _id: data.idUsuario, emailApp: data.email });
 
         if (!existingUser) {
             return res.status(400).json({
@@ -68,7 +74,7 @@ async function GuardarAdministrador(req, res) {
         // Generar un nombre único para la imagen
         const fileExtension = path.extname(file.originalname)
         const fileName = `picture_${Date.now()}${fileExtension}`
-        let filePath = path.join(userFolderPath, fileName)
+        filePath = path.join(userFolderPath, fileName)
 
         // Cambiar las barras invertidas (\) por barras normales (/)
         filePath = filePath.replace(/\\/g, '/');
@@ -103,13 +109,38 @@ async function GuardarAdministrador(req, res) {
 
         const savedUser = await administrador.save();
 
+        if(existingUser.privileges != null){
+
+            const Token = service.createToken(existingUser._id, savedUser.rol);
+            const AppToken = service.createSimpleToken();
+
+           return res.status(200).json({
+                status: "200 OK",
+                message: "Administrador guardado exitosamente origen Pre-Registro",
+                token: Token,
+                appToken: AppToken,
+                data: {user:savedUser}
+            });
+        }
+
         res.status(200).json({
             status: "200 OK",
-            message: "Administrador guardado exitosamente",
+            message: "Administrador guardado exitosamente origen Registro",
             data: {user:savedUser}
         });
 
+
+
     } catch (error) {
+        // Si se creó un archivo, eliminarlo
+        if (filePath) {
+            try {
+                await fsextra.remove(filePath);
+                console.log("Archivo eliminado debido a un error.");
+            } catch (removeError) {
+                console.error("Error al intentar eliminar el archivo:", removeError.message);
+            }
+        }
         res.status(500).json({
             status: '500 ERROR INTERNO DE SERVIDOR',
             message: `Error al intentar guardar el Administrador: ${error.message}`

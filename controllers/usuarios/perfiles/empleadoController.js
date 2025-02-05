@@ -7,10 +7,12 @@ const fs = require('fs')
 const { body, validationResult } = require('express-validator');
 const fsextra = require('fs-extra');
 const path = require('path');
+const service = require('../../../services')
 
 
 async function RegistrarEmpleado(req, res) {
  
+    let filePath ;
     try {
 
         const data = req.body;
@@ -68,7 +70,7 @@ async function RegistrarEmpleado(req, res) {
         // Generar un nombre único para la imagen
         const fileExtension = path.extname(file.originalname)
         const fileName = `picture_${Date.now()}${fileExtension}`
-        let filePath = path.join(userFolderPath, fileName)
+        filePath = path.join(userFolderPath, fileName)
 
         // Cambiar las barras invertidas (\) por barras normales (/)
         filePath = filePath.replace(/\\/g, '/');
@@ -103,13 +105,36 @@ async function RegistrarEmpleado(req, res) {
 
         const savedUser = await empleado.save();
 
+        if(existingUser.privileges != null){
+
+            const Token = service.createToken(existingUser._id, savedUser.rol);
+            const AppToken = service.createSimpleToken();
+
+           return res.status(200).json({
+                status: "200 OK",
+                message: "Empleado guardado exitosamente origen Pre-Registro",
+                token: Token,
+                appToken: AppToken,
+                data: {user:savedUser}
+            });
+        }
+
         res.status(200).json({
             status: "200 OK",
-            message: "Empleado guardado exitosamente",
+            message: "Empleado guardado exitosamente origen Registro",
             data: {user:savedUser}
         });
 
     } catch (error) {
+        // Si se creó un archivo, eliminarlo
+        if (filePath) {
+            try {
+                await fsextra.remove(filePath);
+                console.log("Archivo eliminado debido a un error.");
+            } catch (removeError) {
+                console.error("Error al intentar eliminar el archivo:", removeError.message);
+            }
+        }
         res.status(500).json({
             status: '500 ERROR INTERNO DE SERVIDOR',
             message: `Error al intentar guardar el empleado: ${error.message}`
@@ -146,7 +171,7 @@ async function EditarEmpleado(req,res){
    
     const  perfilID  = req.params.id;
     const cuerpo = req.body;
-    const file = req.file;
+    const file = req.file; 
 
     // Validar el cuerpo
     const camposPermitidos = ['nombre', 'apellido', 'dni', 'date','ciudad','sexo'];

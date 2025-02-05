@@ -15,11 +15,12 @@ async function registroUsuario(req, res) {
 
     try {
         const data = req.body;
+        let password;
         console.log(data);
 
         //Verificar si estan todos los campos
         await body('email').notEmpty().withMessage('El campo "email" es requerido').isEmail().withMessage('El campo "email" debe ser un email válido').run(req);
-        await body('password').notEmpty().withMessage('El campo "password" es requerido').run(req);
+        //await body('password').notEmpty().withMessage('El campo "password" es requerido').run(req);
  
         const errors = validationResult(req);
         if (!errors.isEmpty()) {  
@@ -41,6 +42,17 @@ async function registroUsuario(req, res) {
         //     });
         // }
 
+        if(data.privileges != null){
+            console.log("Registro tardio.");
+            password = crypto.randomBytes(6).toString('hex')+"Nd0";
+        }
+        if(data.privileges == null){
+            console.log("Registro normal.");
+            password = data.password
+        }
+
+
+
         // Generar un código único y su fecha de expiración
         const verificationCode = crypto.randomInt(100000, 999999).toString(); // Código numérico de 6 dígitos
         const expirationTime = Date.now() + 10 * 60 * 1000; // Expira en 10 minutos
@@ -48,7 +60,7 @@ async function registroUsuario(req, res) {
     
        //Encriptar la contraseña
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         let usuario = new Usuario({
             _id: data._id,
@@ -56,6 +68,7 @@ async function registroUsuario(req, res) {
             password: hashedPassword,
             verificationCode: verificationCode,
             codeExpiresAt: expirationTime,
+            privileges: data.privileges,
         });
 
         const savedUser = await usuario.save();
@@ -75,7 +88,8 @@ async function registroUsuario(req, res) {
             subject: 'Código de Verificación',
             text: `Hola, tu código de verificación es ${verificationCode}. 
             \nTu email para usar la app es:  ${savedUser.emailApp}. 
-            \nTu contraseña de acceso: ${data.password}
+            \nTu contraseña de acceso: ${password}
+            \nTe recomendamos que cambies tu contraseña lo antes posible que esta es temporal.
             \nGracias por registrarte.`,
         };
 
@@ -88,8 +102,9 @@ async function registroUsuario(req, res) {
             message: "API : Usuario guardado exitosamente",
             data: { 
                 email:savedUser.email,
-                email:savedUser.emailApp,
-                id:savedUser._id
+                emailApp:savedUser.emailApp,
+                id:savedUser._id,
+                privileges:savedUser.privileges
             }
         });
 
@@ -115,7 +130,7 @@ async function verificarUsuario(req, res) {
         console.log(_id);
 
         // Buscar el usuario por email
-        const user = await Usuario.findOne({ emailApp: email, _id:_id });
+        const user = await Usuario.findOne({ emailApp: emailApp, _id:_id });
 
         if (!user) {
             return res.status(404).json({
@@ -145,11 +160,29 @@ async function verificarUsuario(req, res) {
         user.isVerified = true; // Agrega este campo en el esquema si no existe
         await user.save();
 
+        let rol;
+        let TemporalToken;
+
+        if(user.privileges != null){
+            rol = user.privileges == true ? "Administrador" : "Empleado";
+            TemporalToken  = service.createToken(user._id, rol);
+
+
+
+        }else if(user.privileges == null){
+            rol = null;
+            TemporalToken = null;
+        }
+
         res.status(200).json({
             status: "200 OK",
             message: "API : Usuario verificado exitosamente",
-            data: {emailApp:user.emailApp,
-                idUsuario:user._id}
+            data: {
+                emailApp:user.emailApp,
+                idUsuario:user._id,
+                privileges: rol,
+                temporalToken: TemporalToken
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -167,17 +200,41 @@ async function logIn(req, res){
         const { email, password } = req.body;
 
         // Buscar usuario en la colección de usuarios
-        const usuario = await Usuario.findOne({ email });
+        const usuario = await Usuario.findOne({ emailApp: email });
 
         if (!usuario) {
             return res.status(404).send({status:'Error 404' ,message: 'Email no encontrado' });
         }
+
+
 
         // Verificar contraseña
         const passwordMatch = await bcrypt.compare(password, usuario.password);
         if (!passwordMatch) {
             return res.status(401).send({status:'Error 404' , message: 'Contraseña incorrecta' });
         }
+
+        if(usuario.privileges != null && usuario.isVerified == false){
+
+            let rol = usuario.privileges == true ? "Administrador" : "Empleado";
+            console.log(usuario)
+
+            return res.status(200).json({
+                status: "200 OK 1/2",
+                message:'Perfiliar',
+                data : { 
+                    email: usuario.email,
+                    id: usuario._id,
+                    emailApp:usuario.emailApp,
+                    privileges:rol
+                }
+               
+            }) 
+        }else{
+            console.log("Usurio Altificado: "+usuario.privileges)
+        }
+
+      
 
         // Buscar perfil asociado (Administrador o Empleado)
         const perfil =
@@ -205,7 +262,6 @@ async function logIn(req, res){
                 token: Token,
                 appToken: AppToken,
                 user:perfil
-
             }
            
         }) 
@@ -227,10 +283,10 @@ async function logIn(req, res){
 
 async function eliminarUsuario(req,res){
 
-    const  emailApp  = req.body.emailApp;
-    console.log(emailApp)
+    const  _emailApp  = req.body.emailApp;
+    console.log(_emailApp)
     try{
-        const user = await Usuario.deleteOne({emailApp});
+        const user = await Usuario.deleteOne({emailApp :_emailApp});
         if (user.deletedCount === 0) {
             return res.status(404).json({
                 status: "404 NOT FOUND",
@@ -251,7 +307,7 @@ async function eliminarUsuario(req,res){
 }
 
 async function  todosLosUsuarios(req,res){
-    
+    console.log("Se intento all uers")
     try{
         const user = await Usuario.find()
         return !user ? 
@@ -264,6 +320,7 @@ async function  todosLosUsuarios(req,res){
             data: user
         })
     }catch(error){
+        console.log("Eeorr")
         return res.status(500).json({
             status: '500 ERROR INTERNO DE SERVIDOR',
             message: `ERROR AL REALIZAR LA OPERACION : ${error}`
@@ -378,6 +435,80 @@ async function recuperarPassword(req, res){
     }
 }
 
+async function cambiarPassword(req, res){
+
+    try {
+        console.log("Se intento cambio")
+
+        const email  = req.body.email;
+        const emailApp = req.body.emailApp;
+        const password = req.body.password;
+        console.log(email)
+
+        // Buscar usuario en la colección de usuarios
+        const usuario = await Usuario.findOne({ emailApp: emailApp });
+
+        if (!usuario) {
+            return res.status(404).send({status:'Error 404', header: 'Email no encontrado' ,message: 'Verifica tu email' });
+        }
+
+        // Buscar perfil asociado (Administrador o Empleado)
+        const perfil =
+            (await Administrador.findOne({ idUsuario: usuario._id })) ||
+            (await Cliente.findOne({ idUsuario: usuario._id })) ||
+            (await Empleado.findOne({ idUsuario: usuario._id }));
+
+        if (!perfil) {
+            return res.status(403).send({status:'Error 404', message: 'Perfil no autorizado para cambio' });
+        }
+
+        // Verificar roles permitidos
+        if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado' && perfil.rol !== 'Cliente') { //"estrictamente diferente" de manera que los roles podrian ser cualquier dato no tan explicito
+            return res.status(403).send({status:'Error 404', message: 'Rol no permitido' });
+        }
+
+
+         // 1. Hashear la nueva contraseña
+         const hashedPassword = await bcrypt.hash(password, 10);
+ 
+         // 2. Guardar la nueva contraseña en la base de datos
+         usuario.password = hashedPassword;
+         await usuario.save();
+ 
+
+         // Enviar el correo con el código de verificación
+         const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: config.MAIL_APPLICATION,
+                pass: config.PASSWOR_APPLICATION,
+            },
+        });
+
+        const mailOptions = {
+            from: config.MAIL_APPLICATION,
+            to: usuario.email,
+            subject: 'Cambio de Contraseña',
+            text: `Hola. ${perfil.nombre}
+            \nSe ha generado un cambio contraseña en tu cuenta corporativa: ${usuario.emailApp}
+            \nTu contraseña de acceso: ${password}
+            \nSaludos.
+            \nEl equipo de NightDays.`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            status: "200 OK",
+            header:'Contraseña Cambiada.',
+            message:`Confirmación en tu cuenta personal: \n ${usuario.email}.`,       
+        }) 
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({  status: "500 Error Interno",
+            header:'Fallo en el servidor',message: 'Error interno del servidor' });
+    }
+}
 
 
 module.exports = {
@@ -388,6 +519,7 @@ module.exports = {
     todosLosUsuarios,
     emailDisponible,
     recuperarPassword,
+    cambiarPassword,
  
 }
 

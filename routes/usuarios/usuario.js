@@ -41,6 +41,13 @@ api.post(
     usuarioController.recuperarPassword,
 );
 
+api.post(
+    '/cambiarPassword',
+    auth.isAuth,
+    authz(['Administrador','Empleado','Cliente']),
+    usuarioController.cambiarPassword
+  );
+
 
 
 

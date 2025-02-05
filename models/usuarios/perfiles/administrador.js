@@ -8,7 +8,7 @@ const AdministradorSchema = new mongoose.Schema({
     idUsuario: {type: String, ref: 'Usuario', require: true},
     nombre : { type: String, required: true },
     apellido : { type: String, required: true },
-    dni : { type: String, required: true, unique: true },
+    dni : { type: String, required: true },
     rol : {type : String, default : "Administrador", immutable: true},
     date : { type: String, required: true },
     ciudad : { type: String, required: true },

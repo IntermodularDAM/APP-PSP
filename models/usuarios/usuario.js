@@ -12,7 +12,7 @@ const UsuarioSchema = new mongoose.Schema({
     verificationCode: String, // Código de verificación
     codeExpiresAt: Date, // Fecha de expiración del código
     isVerified: { type: Boolean, default: false }, // Estado de verificación
-    isLoged: { type: Boolean,default:false}, //Si ya realizo login por primera vez
+    privileges: { type: Boolean,default:null}, //Si ya realizo login por primera vez
 }, { _id: false }); //ID False para evitar advertencias de modificación de ID
 
 // Pre-hook para generar un _id autoincrementable
