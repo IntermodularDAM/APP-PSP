@@ -1,4 +1,4 @@
-
+ 
 const Usuario = require("../../models/usuarios/usuario")
 const Administrador = require("../../models/usuarios/perfiles/administrador");
 const Empleado = require("../../models/usuarios/perfiles/empleado");
@@ -134,23 +134,26 @@ async function verificarUsuario(req, res) {
 
         if (!user) {
             return res.status(404).json({
-                status: "404 NOT FOUND",
-                message: "API : Usuario no encontrado",
+                StatusCode: "404 NOT FOUND",
+                ReasonPhrase: "API : Usuario no encontrado",
+                Content: "Verifica tus credenciales",
             });
         }
 
         // Verificar si el código coincide y no ha expirado
         if (user.verificationCode !== verificationCode) {
             return res.status(400).json({
-                status: "400 BAD REQUEST",
-                message: "API : Código de verificación incorrecto",
+                StatusCode: "400 BAD REQUEST",
+                ReasonPhrase: "API : Código de verificación incorrecto",
+                Content: "Verifica tu código de verificación.",
             });
         }
 
         if (user.codeExpiresAt < Date.now()) {
             return res.status(400).json({
-                status: "400 BAD REQUEST",
-                message: "API : El código de verificación ha expirado",
+                StatusCode: "400 BAD REQUEST",
+                ReasonPhrase: "API : El código de verificación ha expirado",
+                Content: "Te has quedado sin perfil pide uno nuevo.",
             });
         }
 
@@ -186,8 +189,9 @@ async function verificarUsuario(req, res) {
         });
     } catch (error) {
         res.status(500).json({
-            status: "500 INTERNAL SERVER ERROR",
-            message: `API : Error al verificar el usuario: ${error.message}`,
+            StatusCode: "500 INTERNAL SERVER ERROR",
+            ReasonPhrase: `API : Error al verificar el usuario: ${error.message}`,
+            Content: "No se que poner aqui.",
         });
     }
 }
@@ -203,7 +207,11 @@ async function logIn(req, res){
         const usuario = await Usuario.findOne({ emailApp: email });
 
         if (!usuario) {
-            return res.status(404).send({status:'Error 404' ,message: 'Email no encontrado' });
+            return res.status(404).send({
+                StatusCode:'Error 404' ,
+                ReasonPhrase: 'Email no encontrado',
+                Content: 'Revisa tu email'
+            });
         }
 
 
@@ -211,7 +219,11 @@ async function logIn(req, res){
         // Verificar contraseña
         const passwordMatch = await bcrypt.compare(password, usuario.password);
         if (!passwordMatch) {
-            return res.status(401).send({status:'Error 404' , message: 'Contraseña incorrecta' });
+            return res.status(401).send({
+                StatusCode:'Error 404' , 
+                ReasonPhrase: 'Contraseña incorrecta', 
+                Content: 'Revisa tu contraseña'
+            });
         }
 
         if(usuario.privileges != null && usuario.isVerified == false){
@@ -242,12 +254,20 @@ async function logIn(req, res){
             (await Empleado.findOne({ idUsuario: usuario._id }));
 
         if (!perfil) {
-            return res.status(403).send({status:'Error 403' , message: 'Perfil no autorizado' });
+            return res.status(403).send({
+                StatusCode:'Error 403' , 
+                ReasonPhrase: 'Perfil no autorizado',
+                Content: 'Eres Cliente .-.' 
+            });
         }
 
         // Verificar roles permitidos
         if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado') {
-            return res.status(403).send({status:'Error 403' , message: 'Rol no permitido' });
+            return res.status(403).send({
+                StatusCode:'Error 403' , 
+                ReasonPhrase: 'Rol no permitido',
+                Content: 'No coincide el rol asignado .-.' 
+            });
         }
 
         const Token = service.createToken(usuario._id, perfil.rol);
@@ -277,7 +297,11 @@ async function logIn(req, res){
         // res.status(200).send({ token, rol: perfil.rol });
     } catch (error) {
         console.error(error);
-        res.status(500).send({status:'Error 500' , message: 'Error interno del servidor' });
+        res.status(500).send({
+            StatusCode:'Error 500' , 
+            ReasonPhrase: 'Error interno del servidor',
+            Content: 'Estamos trabando en ello.'
+         });
     }
 }
 
