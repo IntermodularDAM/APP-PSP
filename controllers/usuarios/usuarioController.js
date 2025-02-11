@@ -201,10 +201,22 @@ async function logIn(req, res){
     try {
         console.log("Se intento login")
 
-        const { email, password } = req.body;
+        const { email, password, appType } = req.body;
+
+        // Validación rápida de appType antes de consultar la DB
+        if (!appType || (appType !== "wpf" && appType !== "android")) {
+            return res.status(400).send({
+                StatusCode: "Error 400",
+                ReasonPhrase: "Parámetro inválido",
+                Content: "Debes especificar si la app es 'wpf' o 'android'.",
+            });
+        }
+
+        // Determinar el campo de búsqueda según el tipo de app
+        const query = appType === "wpf" ? { emailApp: email } : { email: email };
 
         // Buscar usuario en la colección de usuarios
-        const usuario = await Usuario.findOne({ emailApp: email });
+        const usuario = await Usuario.findOne(query);
 
         if (!usuario) {
             return res.status(404).send({
@@ -213,8 +225,6 @@ async function logIn(req, res){
                 Content: 'Revisa tu email'
             });
         }
-
-
 
         // Verificar contraseña
         const passwordMatch = await bcrypt.compare(password, usuario.password);
@@ -226,6 +236,7 @@ async function logIn(req, res){
             });
         }
 
+        // Validar si el usuario tiene privilegios (si es de registro tardio)
         if(usuario.privileges != null && usuario.isVerified == false){
 
             let rol = usuario.privileges == true ? "Administrador" : "Empleado";
@@ -251,22 +262,33 @@ async function logIn(req, res){
         // Buscar perfil asociado (Administrador o Empleado)
         const perfil =
             (await Administrador.findOne({ idUsuario: usuario._id })) ||
-            (await Empleado.findOne({ idUsuario: usuario._id }));
+            (await Empleado.findOne({ idUsuario: usuario._id })) ||
+            (await Cliente.findOne({ idUsuario: usuario._id })) ;
 
         if (!perfil) {
             return res.status(403).send({
                 StatusCode:'Error 403' , 
-                ReasonPhrase: 'Perfil no autorizado',
-                Content: 'Eres Cliente .-.' 
+                ReasonPhrase: 'Perfil no encontrado',
+                Content: 'No existe perfil asociado al usuario .-.' 
             });
         }
 
         // Verificar roles permitidos
-        if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado') {
+        // if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado') {
+        //     return res.status(403).send({
+        //         StatusCode:'Error 403' , 
+        //         ReasonPhrase: 'Rol no permitido',
+        //         Content: 'No coincide el rol asignado .-.' 
+        //     });
+        // }
+
+        // Validación de acceso según la app
+        if ((appType === "wpf" && perfil.rol === "Cliente") || 
+            (appType === "android" && perfil.rol !== "Cliente")) {
             return res.status(403).send({
-                StatusCode:'Error 403' , 
-                ReasonPhrase: 'Rol no permitido',
-                Content: 'No coincide el rol asignado .-.' 
+                StatusCode: "Error 403",
+                ReasonPhrase: "Acceso denegado",
+                Content: `El rol ${perfil.rol} no tiene acceso a ${appType}.`,
             });
         }
 
