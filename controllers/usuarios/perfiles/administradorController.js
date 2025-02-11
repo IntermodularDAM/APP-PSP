@@ -308,6 +308,3 @@ module.exports = {
     EditarAdministrador,
     BuscarAdministrador,
 }
-
-
-

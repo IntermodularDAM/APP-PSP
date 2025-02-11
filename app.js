@@ -11,5 +11,3 @@ app.use('/uploads',express.static(`${__dirname}/uploads`)); //Sirve archivos est
 app.use('/',api);//Rutas principales.
 
 module.exports = app;
-
-
