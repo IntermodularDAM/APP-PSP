@@ -15,10 +15,12 @@ const crearHabitacion = async (req, res) => {
 // Obtener todas los empleados (GET)
 const obtenerHabitaciones = async (req, res) => {
     try {
+        console.log("Entro en el obtener habitaciones.");
         const habitaciones = await Habitacion.find();
+        console.log("Habitaciones recogidas.");
         res.status(200).json(habitaciones);
     } catch (error) {
-        console.error(error);
+        console.error("Fallo al obtener habitaciones. " + error);
         res.status(500).json({ error: error.message });
     }
 };
