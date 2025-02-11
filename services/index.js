@@ -9,7 +9,7 @@ function createToken (user, role) {
     sub: user,
     role: role,
     iat: moment().unix(),
-    exp: moment().add(5 ,'minutes').unix(),
+    exp: moment().add(5000 ,'minutes').unix(),
     }
 
     return jwt.encode(payload, config.SECRET_TOKEN)

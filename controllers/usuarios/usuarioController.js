@@ -31,16 +31,18 @@ async function registroUsuario(req, res) {
             });
         }
 
+                // Buscar usuario en la colección de usuarios
+        const preUsuario = await Usuario.findOne({email : data.email});
 
-        // //Verificar si ya existe un usuario con el mismo correo electrónico
-        // const existingUser = await Usuario.findOne({ email: data.email });
+        if (preUsuario) {
+            return res.status(404).send({
+                StatusCode:'Error 404' ,
+                ReasonPhrase: 'Email ya existe',
+                Content: 'Esta email ya esta registrado'
+            });
+        }
 
-        // if (existingUser) {
-        //     return res.status(400).json({
-        //         status: '400 BAD REQUEST',
-        //         message: 'API: Ya existe un usuario con el correo electrónico proporcionado'
-        //     });
-        // }
+   
 
         if(data.privileges != null){
             console.log("Registro tardio.");
@@ -259,6 +261,7 @@ async function logIn(req, res){
 
       
 
+        console.log(usuario._id);
         // Buscar perfil asociado (Administrador o Empleado)
         const perfil =
             (await Administrador.findOne({ idUsuario: usuario._id })) ||
@@ -273,6 +276,8 @@ async function logIn(req, res){
             });
         }
 
+        console.log(perfil._id);
+
         // Verificar roles permitidos
         // if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado') {
         //     return res.status(403).send({
@@ -283,14 +288,15 @@ async function logIn(req, res){
         // }
 
         // Validación de acceso según la app
-        if ((appType === "wpf" && perfil.rol === "Cliente") || 
-            (appType === "android" && perfil.rol !== "Cliente")) {
-            return res.status(403).send({
-                StatusCode: "Error 403",
-                ReasonPhrase: "Acceso denegado",
-                Content: `El rol ${perfil.rol} no tiene acceso a ${appType}.`,
-            });
-        }
+        // if ((appType === "wpf" && perfil.rol === "Cliente") || 
+        //     (appType === "android" && perfil.rol !== "Cliente")) {
+        //         console.log("appType? "+ appType);
+        //     return res.status(403).send({
+        //         StatusCode: "Error 403",
+        //         ReasonPhrase: "Acceso denegado",
+        //         Content: `El rol ${perfil.rol} no tiene acceso a ${appType}.`,
+        //     });
+        // }
 
         const Token = service.createToken(usuario._id, perfil.rol);
         const AppToken = service.createSimpleToken();
