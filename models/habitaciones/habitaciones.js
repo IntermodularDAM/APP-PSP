@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const habitacionSchema = new mongoose.Schema({
-    _id: { type: String, unique: true, index: true },
+    _id: { type: String },
     num_planta: { type: Number, required: true },
     nombre: {type: String, required: true},
     tipo: { type: String, required: true },
