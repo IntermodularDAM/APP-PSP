@@ -8,16 +8,17 @@ const ClienteSchema = new mongoose.Schema({
     idUsuario: {type: String, ref: 'Usuario', require: true},
     nombre : { type: String, required: true },
     apellido : { type: String, required: true },
-    dni : { type: String, required: true, unique: true },
+    dni : { type: String, required: true},
     rol : {type : String, default : "Cliente", immutable: true},
     date : { type: String, required: true },
     ciudad : { type: String, required: true },
     sexo : { type: String, required: true },
     registro:{type: Date, default: Date.now()},
     rutaFoto : { type: String, required: true },
+    baja:{type :Date },
 
     telefono : String,
-    vip : Boolean,
+    vip : Boolean, 
     
     
 }, { _id: false }); //ID False para evitar advertencias de modificación de ID

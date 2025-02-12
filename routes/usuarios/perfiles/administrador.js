@@ -16,13 +16,34 @@ const upload = multer({
 // Solo los administradores pueden registrar administradores
 api.post(
     '/registrarAdministrador',
-    auth,
+    auth.isAuth,
     authz(['Administrador']), 
     upload.single('picture'),
     administradorController.GuardarAdministrador
 );
 
+api.get(
+  '/getAllAdministradores',
+  auth.isAuth,
+  authz(['Administrador','Empleado']), 
+  administradorController.AllAdministradores
+);
 
+api.put(
+  '/editarAdministrador/:id',
+  auth.isAuth,
+  authz(['Administrador']), 
+  upload.single('picture'),
+  administradorController.EditarAdministrador
+);
+
+api.post(
+  '/buscarAdministrador',
+  auth.isAuth,
+  authz(['Administrador','Empleado']), 
+  upload.single('picture'),
+  administradorController.BuscarAdministrador
+);
 
 // // Los empleados también pueden registrar clientes
 // api.post(

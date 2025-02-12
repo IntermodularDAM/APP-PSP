@@ -1,26 +1,79 @@
 'use strict'
-
-
+  
 const services = require('../services')
 
 function isAuth(req, res, next) {
     if (!req.headers.authorization) {
-       return res.status(403).send({ message:'No tienes autorización'}) 
-    }
- 
+       return res.status(403).send({ 
+        StatusCode: '403 Forbidden',
+        ReasonPhrase: 'Authorization Required',
+        Content: 'Debes proporcionar un token válido en la cabecera "Authorization.'
+    }) ;
+    } 
     const token = req.headers.authorization.split(' ')[1]
-
     services.decodeToken(token)
-    .then(response =>{
-        req.user = { id: response.sub, role: response.role };
-        next()
-    })
-    .catch(response => { 
-        res.status(response.status).send({ message: response.message });
+        .then(payload =>{
+            // if (!response || !response.sub || !response.role) {
+            //     throw { status: 401, message: "Token inválido o mal formado" };
+            // }
+            req.user = { id: payload.sub, role: payload.role };
+            next()
+        })
+        .catch(error => { 
+            //res.status(response.status).send({ message: response.message });
+            console.error("Error en isAuth:", error);
+            const status = error.StatusCode || 500;
+            const header = error.ReasonPhrase|| "Authorization Error"
+            const message = error.Content || "Error interno del servidor";
+            res.status(error.status || 500).send({                
+                StatusCode: status,   
+                ReasonPhrase: header,
+                Content: message
+            }
+        );
     })  
 }    
+
+// Middleware para verificar si el token simple sigue siendo válido
+function verifyToken(req, res) {
+    if (!req.headers.authorization) {
+        return res.status(403).send(
+            { 
+                StatusCode: '403 Forbidden',
+                ReasonPhrase: 'Authorization Required',
+                Content: 'Debes proporcionar un token válido en la cabecera "Authorization.'
+            }
+        );
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    services.verifySimpleToken(token)
+        .then(() => {
+            return res.status(200).send(
+                { 
+                    StatusCode: '200 OK',
+                    ReasonPhrase: 'Authorization',
+                    Content: 'Token válido.'
+                }
+            );
+    
+        })
+        .catch(error => {
+            console.error("Error en verifySimpleToken:", error);
+            const status = error.StatusCode|| 500;
+            const header = error.ReasonPhrase|| "Authorization Error"
+            const message = error.Content || "Error interno del servidor";
+            return res.status(status).send({ 
+                StatusCode: status,   
+                ReasonPhrase: header,
+                Content: message
+             });       
+         });
+}
  
-module.exports = isAuth
+module.exports = {
+    isAuth,
+    verifyToken
+}
 
 // Ruta : "services\index.js"
 // 'use strict'

@@ -57,15 +57,3 @@ mongoose.connect(config.db)
 // }catch(error){
 //     console.log()
 // }
-
-
-
-
-
-
-
-
-
-
-
-
