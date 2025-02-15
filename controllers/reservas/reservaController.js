@@ -1,5 +1,8 @@
 const Reserva = require('../../models/reservas/reservas');
 const Usuario = require('../../models/usuarios/usuario');
+const Administrador = require('../../models/usuarios/perfiles/administrador');
+const Empleado = require('../../models/usuarios/perfiles/empleado');
+const Cliente = require('../../models/usuarios/perfiles/cliente');
 const Habitacion  = require('../../models/habitaciones/habitaciones');
 const { body, validationResult } = require('express-validator');
 
@@ -24,7 +27,10 @@ async function crearReserva(req, res) {
 
         // Verificar si el usuario existe
         const usuario = await Usuario.findOne({ _id: id_usu });
-        if (!usuario) {
+        const administrador = await Administrador.findOne({ _id: id_usu });
+        const empleado = await Empleado.findOne({ _id: id_usu });
+        const cliente = await Cliente.findOne({ _id: id_usu });
+        if (!usuario && !administrador && !empleado && !cliente) {
             return res.status(404).json({
                 status: '404 NOT FOUND',
                 message: `El usuario con id ${id_usu} no existe.`,
