@@ -37,6 +37,13 @@ api.put(
   empleadoController.EditarEmpleado
 );
 
+api.delete(
+  '/eliminarEmpleado',
+  auth.isAuth,
+  authz(['Administrador']), 
+  empleadoController.eliminarEmpleado
+);
+
 api.post(
   '/buscarEmpleado',
   auth.isAuth,

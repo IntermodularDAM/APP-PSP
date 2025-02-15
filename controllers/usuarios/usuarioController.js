@@ -179,6 +179,8 @@ async function verificarUsuario(req, res) {
             TemporalToken = null;
         }
 
+        
+
         res.status(200).json({
             status: "200 OK",
             message: "API : Usuario verificado exitosamente",
@@ -287,16 +289,16 @@ async function logIn(req, res){
         //     });
         // }
 
-        // Validación de acceso según la app
-        // if ((appType === "wpf" && perfil.rol === "Cliente") || 
-        //     (appType === "android" && perfil.rol !== "Cliente")) {
-        //         console.log("appType? "+ appType);
-        //     return res.status(403).send({
-        //         StatusCode: "Error 403",
-        //         ReasonPhrase: "Acceso denegado",
-        //         Content: `El rol ${perfil.rol} no tiene acceso a ${appType}.`,
-        //     });
-        // }
+        //Validación de acceso según la app
+        if ((appType === "wpf" && perfil.rol === "Cliente") || 
+            (appType === "android" && perfil.rol !== "Cliente")) {
+                console.log("appType? "+ appType);
+            return res.status(403).send({
+                StatusCode: "Error 403",
+                ReasonPhrase: "Acceso denegado",
+                Content: `El rol ${perfil.rol} no tiene acceso a ${appType}.`,
+            });
+        }
 
         const Token = service.createToken(usuario._id, perfil.rol);
         const AppToken = service.createSimpleToken();
@@ -561,6 +563,8 @@ async function cambiarPassword(req, res){
             header:'Fallo en el servidor',message: 'Error interno del servidor' });
     }
 }
+
+
 
 
 module.exports = {

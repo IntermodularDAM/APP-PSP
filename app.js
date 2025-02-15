@@ -5,9 +5,10 @@ const app = express();//Crea una instancia de la aplicación Express que será u
 const api = require('./routes');//Sirve todas las rutas
 
 app.use(express.json());// Middleware para parsear JSON, para manejar peticiones POST, PUT o PATCH
-
 app.use('/uploads',express.static(`${__dirname}/uploads`)); //Sirve archivos estáticos desde el directorio public/images cuando se accede a la ruta /uploads.
 
+
+//app.use(express.urlencoded({ extended: true }))
 app.use('/',api);//Rutas principales.
 
 module.exports = app;
