@@ -7,7 +7,8 @@ const fs = require('fs')
 const { body, validationResult } = require('express-validator');
 const fsextra = require('fs-extra');
 const path = require('path');
-const service = require('../../../services')
+const service = require('../../../services');
+const { Console } = require("console");
 
 
 async function RegistrarEmpleado(req, res) {
@@ -295,9 +296,64 @@ async function BuscarEmpleado(req, res) {
 
 }
 
+async function eliminarEmpleado(req, res) {
+    const perfilID = req.body._id;
+
+    console.log(perfilID);
+    // Verificar si el administrador existe
+    const existingEmpleado = await Empleado.findById(perfilID);
+    
+    if (!existingEmpleado) {
+        return res.status(404).json({
+            StatusCode: '404 NOT FOUND',
+            ReasonPhrase: 'El empleado no existe',
+            Content:'Existe un error con el ID'
+        });
+    }
+
+    const seEliminoAntes = await Usuario.findById(existingEmpleado.idUsuario);
+
+    if(seEliminoAntes.password == ""){
+        return res.status(404).json({
+            StatusCode: '404 NOT FOUND',
+            ReasonPhrase: 'El empleado de baja',
+            Content:`Fecha de baja ${existingEmpleado.baja} `
+        });
+    }
+
+    try {
+        // Actualizar el campo 'baja' con la fecha actual
+        const empleadoEliminado = await Empleado.findByIdAndUpdate(
+            perfilID,
+            { baja: new Date() },  // Se actualiza el campo 'baja' con la fecha actual
+            { new: true }          // Para devolver el documento actualizado
+        ).lean();
+
+        // Actualizar la contraseña vacía en Usuario
+        await Usuario.findByIdAndUpdate(
+            empleadoEliminado.idUsuario, // Buscar el usuario relacionado
+            { password: '' }, // Dejar la contraseña vacía
+            { new: true }
+        );
+
+        return res.status(200).json({
+            StatusCode: "200 OK",
+            ReasonPhrase: 'Eliminación exitosa.',
+            Content: `El perfil empleado de ${empleadoEliminado.nombre} con ID: ${empleadoEliminado._id}, ha sido eliminado.`
+        });
+    } catch (error) {
+        return res.status(500).json({
+            StatusCode: '500 ERROR INTERNO DE SERVIDOR',
+            ReasonPhrase: `ERROR AL REALIZAR LA OPERACIÓN: ${error}`,
+            Content: "Llama al programador .-."
+        });
+    }
+} 
+
 module.exports = {
     RegistrarEmpleado,
     AllEmpleados,
     EditarEmpleado,
     BuscarEmpleado,
+    eliminarEmpleado,
 }

@@ -302,9 +302,53 @@ async function BuscarAdministrador(req, res) {
 
 }
 
+async function eliminarAdministrador(req, res) {
+    const perfilID = req.body._id;
+
+    // Verificar si el administrador existe
+    const existingAdministrador = await Administrador.findById(perfilID);
+    
+    if (!existingAdministrador) {
+        return res.status(404).json({
+            StatusCode: '404 NOT FOUND',
+            ReasonPhrase: 'El administrador no existe',
+            Content:'Existe un error con el ID'
+        });
+    }
+
+    try {
+        // Actualizar el campo 'baja' con la fecha actual
+        const administradorEliminado = await Administrador.findByIdAndUpdate(
+            perfilID,
+            { baja: new Date() },  // Se actualiza el campo 'baja' con la fecha actual
+            { new: true }          // Para devolver el documento actualizado
+        ).lean();
+
+        // Actualizar la contraseña vacía en Usuario
+        await Usuario.findByIdAndUpdate(
+            existingAdministrador.idUsuario, // Buscar el usuario relacionado
+            { password: '' }, // Dejar la contraseña vacía
+            { new: true }
+        );
+
+        return res.status(200).json({
+            StatusCode: "200 OK",
+            ReasonPhrase: 'Eliminación exitosa.',
+            Content: `El perfil administrador de ${administradorEliminado.nombre} con ID: ${administradorEliminado._id}, ha sido eliminado.`
+        });
+    } catch (error) {
+        return res.status(500).json({
+            StatusCode: '500 ERROR INTERNO DE SERVIDOR',
+            ReasonPhrase: `ERROR AL REALIZAR LA OPERACIÓN: ${error}`,
+            Content: "Llama al programador .-."
+        });
+    }
+} 
+
 module.exports = {
     GuardarAdministrador,
     AllAdministradores,
     EditarAdministrador,
     BuscarAdministrador,
+    eliminarAdministrador,
 }

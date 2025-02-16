@@ -11,6 +11,7 @@ const path = require('path');
 
 async function RegistrarCliente(req, res) {
  
+    console.log("Se intento registro cliente")
     let filePath;
     try {
 
@@ -38,7 +39,7 @@ async function RegistrarCliente(req, res) {
             });
         }
         if(!req.file){
-            return res.status(400).json({
+            return res.status(402).json({
                 status: '400 BAD REQUEST',
                 message: 'Falta imagen'
             });
@@ -281,10 +282,54 @@ async function BuscarCliente(req, res) {
 
 }
 
+async function eliminarCliente(req, res) {
+    const perfilID = req.body._id;
+
+    // Verificar si el administrador existe
+    const existingCliente = await Cliente.findById(perfilID);
+    
+    if (!existingCliente) {
+        return res.status(404).json({
+            StatusCode: '404 NOT FOUND',
+            ReasonPhrase: 'El cliente no existe',
+            Content:'Existe un error con el ID'
+        });
+    }
+
+    try {
+        // Actualizar el campo 'baja' con la fecha actual
+        const clienteEliminado = await Cliente.findByIdAndUpdate(
+            perfilID,
+            { baja: new Date() },  // Se actualiza el campo 'baja' con la fecha actual
+            { new: true }          // Para devolver el documento actualizado
+        ).lean();
+
+        // Actualizar la contraseña vacía en Usuario
+        await Usuario.findByIdAndUpdate(
+            clienteEliminado.idUsuario, // Buscar el usuario relacionado
+            { password: '' }, // Dejar la contraseña vacía
+            { new: true }
+        );
+
+        return res.status(200).json({
+            StatusCode: "200 OK",
+            ReasonPhrase: 'Eliminación exitosa.',
+            Content: `El perfil empleado de ${clienteEliminado.nombre} con ID: ${clienteEliminado._id}, ha sido eliminado.`
+        });
+    } catch (error) {
+        return res.status(500).json({
+            StatusCode: '500 ERROR INTERNO DE SERVIDOR',
+            ReasonPhrase: `ERROR AL REALIZAR LA OPERACIÓN: ${error}`,
+            Content: "Llama al programador .-."
+        });
+    }
+} 
+
 module.exports = {
     RegistrarCliente,
     AllClientes,
     EditarCliente,
     BuscarCliente,
+    eliminarCliente,
     
 }

@@ -110,7 +110,7 @@ async function actualizarHabitacion(req, res) {
             habitacion.opciones = opciones;
             camposActualizados = true;
         }
-        if (imagenBase64) {
+        if (habitacion.imagenBase64 !== imagenBase64) {
             console.log(`Actualizando imagen: ${imagenBase64}`)
             habitacion.imagenBase64 = imagenBase64;
             camposActualizados = true;

@@ -15,9 +15,13 @@ const upload = multer({
 //Los empleados también pueden registrar clientes
 api.post(
     '/registrarCliente',
-    auth.isAuth,
-    authz(['Administrador', 'Empleado']),
     upload.single('picture'),
+    (req, res, next) => {
+      console.log(req.body);  // 🚀 Verifica el cuerpo de la solicitud
+      console.log(req.file);  // 🚀 Verifica el archivo recibido
+      next();
+  },
+
     clienteController.RegistrarCliente
 );
 
@@ -34,6 +38,13 @@ api.put(
   authz(['Administrador','Empleado']), 
   upload.single('picture'),
   clienteController.EditarCliente
+);
+
+api.delete(
+  '/eliminarCliente',
+  auth.isAuth,
+  authz(['Administrador','Empleado','Cliente']), 
+  clienteController.eliminarCliente
 );
 
 api.post(

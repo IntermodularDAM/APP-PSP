@@ -37,6 +37,13 @@ api.put(
   administradorController.EditarAdministrador
 );
 
+api.delete(
+  '/eliminarAdministrador',
+  auth.isAuth,
+  authz(['Administrador']), 
+  administradorController.eliminarAdministrador
+);
+
 api.post(
   '/buscarAdministrador',
   auth.isAuth,
