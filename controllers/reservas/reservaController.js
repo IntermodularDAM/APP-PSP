@@ -25,6 +25,13 @@ async function crearReserva(req, res) {
 
         const { id_usu, id_hab, fecha_check_in, fecha_check_out } = req.body;
 
+        if (fecha_check_out < fecha_check_in) {
+            return res.status(400).json({
+                status: '400 Bad Request',
+                message: 'La fecha de salido no puede ser inferior a la fecha de entrada.'
+            })
+        }
+
         // Verificar si el usuario existe
         const usuario = await Usuario.findOne({ _id: id_usu });
         const administrador = await Administrador.findOne({ _id: id_usu });
@@ -115,16 +122,16 @@ async function modificarReserva(req, res) {
 
         // Extraer datos del cuerpo de la solicitud
         const { id_usu, id_hab, fecha_check_in, fecha_check_out, estado_reserva } = req.body;
+        const reservaId = req.params._id;
 
-        console.log(`Usuario ${id_usu} encontrado.`);
-        console.log(`Habitación ${id_hab} encontrada.`);
+        console.log(`Modificando reserva con ID: ${reservaId}`);
 
         // Buscar la reserva en la base de datos
-        const reserva = await Reserva.findOne({ id_usu: id_usu, id_hab: id_hab });
+        const reserva = await Reserva.findById(reservaId);
         if (!reserva) {
             return res.status(404).json({
                 status: '404 NOT FOUND',
-                message: `No se ha encontrado la reserva con el usuario ${id_usu} y la habitación ${id_hab}.`
+                message: `No se ha encontrado la reserva con ID ${reservaId}.`
             });
         }
 
