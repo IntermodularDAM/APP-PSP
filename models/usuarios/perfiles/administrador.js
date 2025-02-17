@@ -13,9 +13,12 @@ const AdministradorSchema = new mongoose.Schema({
     date : { type: String, required: true },
     ciudad : { type: String, required: true },
     sexo : { type: String, required: true },
-    registro:{type: Date, default: Date.now()},
+    registro: { 
+        type: String, 
+        default: () => new Date().toLocaleDateString('es-ES')
+    },
     rutaFoto : { type: String, required: true },
-    baja:{type :Date },
+    baja:{type :String },
 
     nivelDeAcceso : String,
     responsableDeArea : String,

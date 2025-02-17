@@ -417,16 +417,17 @@ async function recuperarPassword(req, res){
     try {
         console.log("Se intento recuperar")
 
-        const  email  = req.body.email;
-        console.log(email)
+        const  emailApp  = req.body.email;
+        console.log(emailApp)
 
         // Buscar usuario en la colección de usuarios
-        const usuario = await Usuario.findOne({ email });
+        const usuario = await Usuario.findOne({ emailApp });
 
         if (!usuario) {
             return res.status(404).send({status:'Error 404', header: 'Email no encontrado' ,message: 'Verifica tu email' });
         }
 
+        console.log(usuario.email)
 
         // Buscar perfil asociado (Administrador o Empleado)
         const perfil =
@@ -503,7 +504,10 @@ async function cambiarPassword(req, res){
         const usuario = await Usuario.findOne({ emailApp: emailApp });
 
         if (!usuario) {
-            return res.status(404).send({status:'Error 404', header: 'Email no encontrado' ,message: 'Verifica tu email' });
+            return res.status(404).send({
+                StatusCode:'Error 404', 
+                ReasonPhrase: 'Email no encontrado' ,
+                Content: 'Verifica tu email' });
         }
 
         // Buscar perfil asociado (Administrador o Empleado)
@@ -513,12 +517,20 @@ async function cambiarPassword(req, res){
             (await Empleado.findOne({ idUsuario: usuario._id }));
 
         if (!perfil) {
-            return res.status(403).send({status:'Error 404', message: 'Perfil no autorizado para cambio' });
+            return res.status(403).send({
+                StatusCode:'Error 404', 
+                ReasonPhrase:'Error',
+                Content: 'Perfil no autorizado para cambio' 
+            });
         }
 
         // Verificar roles permitidos
         if (perfil.rol !== 'Administrador' && perfil.rol !== 'Empleado' && perfil.rol !== 'Cliente') { //"estrictamente diferente" de manera que los roles podrian ser cualquier dato no tan explicito
-            return res.status(403).send({status:'Error 404', message: 'Rol no permitido' });
+            return res.status(403).send({
+                StatusCode:'Error 404', 
+                ReasonPhrase: 'Rol no permitido',
+                Content:'No tienes la autorización requerida'
+            });
         }
 
 
@@ -553,14 +565,14 @@ async function cambiarPassword(req, res){
         await transporter.sendMail(mailOptions);
 
         res.status(200).json({
-            status: "200 OK",
-            header:'Contraseña Cambiada.',
-            message:`Confirmación en tu cuenta personal: \n ${usuario.email}.`,       
+            StatusCode: "200 OK",
+            ReasonPhrase:'Contraseña Cambiada.',
+            Content:`Confirmación en tu cuenta personal: \n ${usuario.email}.`,       
         }) 
     } catch (error) {
         console.error(error);
-        res.status(500).send({  status: "500 Error Interno",
-            header:'Fallo en el servidor',message: 'Error interno del servidor' });
+        res.status(500).send({  StatusCode: "500 Error Interno",
+            ReasonPhrase:'Fallo en el servidor',Content: 'Error interno del servidor' });
     }
 }
 

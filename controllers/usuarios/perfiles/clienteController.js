@@ -244,7 +244,7 @@ async function BuscarCliente(req, res) {
     const cuerpo = req.body
 
     // Validar el cuerpo
-    const camposPermitidos = ['nombre', 'dni', 'date','ciudad','rol'];
+    const camposPermitidos = ['nombre', 'dni', 'date','baja','rol'];
     const camposInvalidos = Object.keys(cuerpo).filter((campo) => !camposPermitidos.includes(campo));
     
     if (camposInvalidos.length > 0) {
@@ -255,8 +255,17 @@ async function BuscarCliente(req, res) {
     }
 
     try {
+
+        let filtro = { ...cuerpo }; // Copiamos todo el cuerpo
+
+        // Manejo especial del campo "baja"
+        if ("baja" in cuerpo) {
+            if (cuerpo.baja === "true") {
+                filtro.baja = { $exists: true, $ne: null }; // Administradores dados de baja
+            } 
+        }
         // Realizar la búsqueda directamente con el cuerpo
-        const cliente = await Cliente.find(cuerpo);
+        const cliente = await Cliente.find(filtro);
 
         // Validar si hay resultados
         if (cliente.length === 0) {
@@ -296,18 +305,30 @@ async function eliminarCliente(req, res) {
         });
     }
 
+    const seEliminoAntes = await Usuario.findById(existingCliente.idUsuario);
+
+    if(seEliminoAntes.password == ""){
+        return res.status(404).json({
+            StatusCode: '404 NOT FOUND',
+            ReasonPhrase: 'Cliente de baja',
+            Content:`Fecha de baja ${existingEmpleado.baja} `
+        });
+    }
+
     try {
+        // Obtener la fecha en formato DD/MM/YYYY
+        const fechaBaja = new Date().toLocaleDateString('es-ES');
         // Actualizar el campo 'baja' con la fecha actual
         const clienteEliminado = await Cliente.findByIdAndUpdate(
             perfilID,
-            { baja: new Date() },  // Se actualiza el campo 'baja' con la fecha actual
+            { baja: fechaBaja },  // Se actualiza el campo 'baja' con la fecha actual
             { new: true }          // Para devolver el documento actualizado
         ).lean();
 
         // Actualizar la contraseña vacía en Usuario
         await Usuario.findByIdAndUpdate(
             clienteEliminado.idUsuario, // Buscar el usuario relacionado
-            { password: '' }, // Dejar la contraseña vacía
+            { password: 'ClaveMaestra' }, // Dejar la contraseña vacía
             { new: true }
         );
 

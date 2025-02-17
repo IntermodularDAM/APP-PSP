@@ -9,7 +9,7 @@ function createToken (user, role) {
     sub: user,
     role: role,
     iat: moment().unix(),
-    exp: moment().add(1000 ,'minutes').unix(),
+    exp: moment().add(30,'minutes').unix(),
     }
 
     return jwt.encode(payload, config.SECRET_TOKEN)
@@ -28,21 +28,22 @@ function decodeToken(token){
     return new Promise((resolve, reject)=>{
         try{
 
-            // // Decodificar sin verificar la clave para obtener `exp`
-            // const decodedHeader = jwt.decode(token, null, true); 
+            // Decodificar sin verificar la clave para obtener `exp`
+            const decodedHeader = jwt.decode(token, null, true); 
 
-            // // Si el token ha expirado, lanzamos un error específico
-            // if (decodedHeader.exp <= moment().unix()) {
-            //     return reject({
-            //         status: 401,
-            //         message: 'Token Expirado'
-            //     });
-            // }
+            // Si el token ha expirado, lanzamos un error específico
+            if (!decodedHeader.exp || decodedHeader.exp <= moment().unix()) {
+                return reject({
+                    StatusCode: 401,
+                    ReasonPhrase: 'Token Expired',
+                    Content: 'El token ha expirado. Iniciar sesión.'
+                });
+            }
 
-            // // Ahora sí decodificamos el token completo con la clave
-            // const payload = jwt.decode(token, config.SECRET_TOKEN);
+            // Ahora sí decodificamos el token completo con la clave
+            const payload = jwt.decode(token, config.SECRET_TOKEN);
 
-            // // Validar que el payload contenga los datos esperados
+            // Validar que el payload contenga los datos esperados
             // if (!payload.sub || !payload.role) {
             //     return reject({
             //         status: 400,
@@ -50,17 +51,17 @@ function decodeToken(token){
             //     });
             // }
 
-            const payload = jwt.decode(token, config.SECRET_TOKEN)
+            // const payload = jwt.decode(token, config.SECRET_TOKEN)
 
-            //si ha expirado
-            if (payload.exp <= moment().unix()) {
-                console.log("Token Expirado")
-                 reject({
-                        StatusCode: 401,
-                        ReasonPhrase: 'Token Expired',
-                        Content: 'El token ha expirado. Iniciar sesión.'
-                    })
-            }
+            // //si ha expirado
+            // if (payload.exp <= moment().unix()) {
+            //     console.log("Token Expirado")
+            //      reject({
+            //             StatusCode: 401,
+            //             ReasonPhrase: 'Token Expired',
+            //             Content: 'El token ha expirado. Iniciar sesión.'
+            //         })
+            // }
 
             // Verificar que los campos esenciales existen
             if (!payload.sub || !payload.role) {
